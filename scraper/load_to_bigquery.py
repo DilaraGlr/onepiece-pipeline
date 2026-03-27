@@ -18,6 +18,7 @@ TABLE_REF = f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}"
 # ============================================================
 
 def load_json(filepath):
+    """Lit le fichier JSON produit par le scraper."""
     print(f"\n📂 Lecture du fichier {filepath}...")
 
     with open(filepath, "r", encoding="utf-8") as f:
@@ -33,13 +34,19 @@ def load_json(filepath):
 # ============================================================
 
 def format_chapter(chapter):
+    """
+    Convertit un chapitre brut en dictionnaire
+    compatible avec BigQuery.
+    On n'envoie PAS image_urls car c'est une liste —
+    BigQuery nécessite un type ARRAY pour ça,
+    qu'on ajoutera plus tard.
+    """
     return {
-        "id": chapter.get("id"),
         "chapter_number": chapter.get("chapter_number"),
-        "title": chapter.get("title"),
-        "volume": chapter.get("volume"),
-        "language": chapter.get("language"),
-        "published_at": chapter.get("published_at"),
+        "url": chapter.get("url"),
+        "image_count": chapter.get("image_count", 0),
+        "source": "onepiecescan.fr",
+        "language": "fr",
         "scraped_at": chapter.get("scraped_at"),
     }
 
@@ -54,27 +61,21 @@ def load_to_bigquery(chapters):
 
     client = bigquery.Client(project=PROJECT_ID)
 
-    # On convertit chaque chapitre au bon format
     rows = [format_chapter(chap) for chap in chapters]
 
     print(f"📤 Envoi de {len(rows)} chapitres vers BigQuery...")
 
-    # On configure le job de chargement
-    # WRITE_TRUNCATE = on écrase les données existantes à chaque fois
-    # C'est plus simple pour commencer — on verra WRITE_APPEND plus tard
     job_config = bigquery.LoadJobConfig(
         write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
         source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
     )
 
-    # On lance le chargement
     job = client.load_table_from_json(
         rows,
         TABLE_REF,
         job_config=job_config,
     )
 
-    # On attend que le job soit terminé
     job.result()
 
     print(f"✅ {len(rows)} chapitres insérés avec succès !")

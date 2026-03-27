@@ -1,5 +1,5 @@
 import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 from google.cloud import bigquery
 
@@ -12,13 +12,17 @@ DATASET_ID = "onepiece"
 TABLE_ID = "chapters"
 TABLE_REF = f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}"
 
-# Couleurs du thème One Piece
-ROUGE = "#CC0000"
-BLEU = "#003087"
-BLEU_CLAIR = "#0055b3"
-OR = "#FFD700"
-FOND = "#0d0d0d"
-FOND_CARTE = "#0a0a1a"
+# Palette — coucher de soleil sur l'océan
+OR        = "#E9A84C"   # Or chaud sunset
+OR_PALE   = "#F4C87A"   # Or pâle
+TEAL      = "#0A774D"   # Teal océan profond
+TEAL2     = "#1A9E6A"   # Teal clair
+ROUGE     = "#C0392B"   # Rouge sang de pirate
+OCEAN     = "#0B1D3A"   # Bleu océan profond
+OCEAN2    = "#0D2545"   # Bleu nuit
+CIEL      = "#1B4F7A"   # Bleu ciel horizon
+FOND      = "#070E1C"   # Fond ultra sombre
+TEXTE     = "#D4B896"   # Beige parchemin
 
 
 # ============================================================
@@ -26,48 +30,121 @@ FOND_CARTE = "#0a0a1a"
 # ============================================================
 
 def apply_style():
-    """Injecte du CSS personnalisé pour le thème One Piece."""
-    st.markdown("""
+    st.markdown(f"""
         <style>
-        .stApp {
-            background-color: #0d0d0d;
-        }
-        h1 {
-            color: #003087 !important;
-            font-size: 2.5rem !important;
-            text-align: center;
-            text-shadow: 2px 2px 8px #CC0000;
-            border-bottom: 3px solid #CC0000;
-            padding-bottom: 16px;
-        }
-        h2, h3 {
-            color: #003087 !important;
-        }
-        p, div {
-            color: #f0f0f0;
-        }
-        [data-testid="stMetric"] {
-            background: linear-gradient(135deg, #0a0a1a, #0d0d2a);
-            border: 1px solid #003087;
-            border-radius: 12px;
-            padding: 16px;
-            text-align: center;
-        }
-        [data-testid="stMetricLabel"] {
-            color: #0055b3 !important;
-            font-size: 0.85rem !important;
-        }
-        [data-testid="stMetricValue"] {
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Lato:wght@300;400;700&display=swap');
+
+        .stApp {{
+            background: radial-gradient(ellipse at top, {OCEAN2} 0%, {FOND} 60%);
+            background-attachment: fixed;
+        }}
+
+        /* Titre */
+        h1 {{
+            font-family: 'Cinzel', serif !important;
+            color: {OR} !important;
+            font-size: 3rem !important;
+            text-align: center !important;
+            letter-spacing: 8px !important;
+            font-weight: 900 !important;
+            text-shadow:
+                0 0 30px rgba(233,168,76,0.4),
+                0 2px 4px rgba(0,0,0,0.8);
+            padding: 16px 0 8px 0 !important;
+            border: none !important;
+        }}
+
+        /* Sous-titres */
+        h2, h3 {{
+            font-family: 'Cinzel', serif !important;
+            color: {OR_PALE} !important;
+            font-weight: 700 !important;
+            letter-spacing: 3px !important;
+            font-size: 1rem !important;
+            text-transform: uppercase !important;
+            opacity: 0.9;
+        }}
+
+        /* Texte général */
+        p, div, span, label {{
+            font-family: 'Lato', sans-serif !important;
+            color: {TEXTE} !important;
+        }}
+
+        /* Séparateur */
+        hr {{
+            border: none !important;
+            height: 1px !important;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                {TEAL} 20%,
+                {OR} 50%,
+                {TEAL} 80%,
+                transparent 100%) !important;
+            opacity: 0.5;
+            margin: 28px 0 !important;
+        }}
+
+        /* Métriques */
+        [data-testid="stMetric"] {{
+            background: linear-gradient(145deg,
+                rgba(11,29,58,0.9),
+                rgba(13,37,69,0.6));
+            border: 1px solid rgba(233,168,76,0.15);
+            border-bottom: 2px solid {OR};
+            border-radius: 4px;
+            padding: 24px 16px !important;
+            text-align: center !important;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }}
+
+        [data-testid="stMetric"]:hover {{
+            border-bottom-color: {TEAL2};
+            background: linear-gradient(145deg,
+                rgba(10,119,77,0.15),
+                rgba(13,37,69,0.8));
+            transform: translateY(-3px);
+        }}
+
+        [data-testid="stMetricLabel"] p {{
+            color: {OR} !important;
+            font-size: 0.7rem !important;
+            letter-spacing: 3px !important;
+            text-transform: uppercase !important;
+            font-weight: 700 !important;
+        }}
+
+        [data-testid="stMetricValue"] {{
             color: #ffffff !important;
+            font-family: 'Cinzel', serif !important;
             font-size: 2rem !important;
-        }
-        [data-testid="stDataFrame"] {
-            border: 1px solid #003087;
-            border-radius: 8px;
-        }
-        hr {
-            border-color: #CC0000;
-        }
+            font-weight: 700 !important;
+        }}
+
+        /* Tableau */
+        [data-testid="stDataFrame"] {{
+            border: 1px solid rgba(233,168,76,0.2) !important;
+            border-radius: 4px !important;
+        }}
+
+        /* Inputs */
+        [data-baseweb="input"] {{
+            background: rgba(11,29,58,0.8) !important;
+            border: 1px solid rgba(233,168,76,0.3) !important;
+        }}
+        [data-baseweb="input"] input {{
+            color: {TEXTE} !important;
+            font-family: 'Lato', sans-serif !important;
+        }}
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {{ width: 4px; }}
+        ::-webkit-scrollbar-track {{ background: {FOND}; }}
+        ::-webkit-scrollbar-thumb {{ background: {OR}; border-radius: 2px; }}
+
+        /* Spinner */
+        .stSpinner > div {{ border-top-color: {OR} !important; }}
         </style>
     """, unsafe_allow_html=True)
 
@@ -78,20 +155,14 @@ def apply_style():
 
 @st.cache_data
 def get_chapters():
-    """Récupère les chapitres depuis BigQuery."""
     client = bigquery.Client(project=PROJECT_ID)
-
     query = f"""
         SELECT
             CAST(chapter_number AS INT64) AS chapter_number,
-            title,
-            CAST(volume AS INT64) AS volume,
-            published_at,
-            scraped_at
+            url, image_count, source, language, scraped_at
         FROM `{TABLE_REF}`
         ORDER BY CAST(chapter_number AS INT64)
     """
-
     return client.query(query).to_dataframe()
 
 
@@ -99,100 +170,142 @@ def get_chapters():
 # GRAPHIQUES
 # ============================================================
 
-def chart_chapters_by_volume(df):
-    """Graphique : nombre de chapitres par tome."""
-    df_v = df[df["volume"].notna()]
-
-    if df_v.empty:
-        st.info("Pas assez de données pour ce graphique.")
-        return
-
-    counts = (
-        df_v.groupby("volume")
-        .size()
-        .reset_index(name="chapitres")
-        .sort_values("volume")
-    )
-
-    fig = px.bar(
-        counts,
-        x="volume",
-        y="chapitres",
-        title="Chapitres par tome",
-        labels={"volume": "Tome", "chapitres": "Nb chapitres"},
-        color_discrete_sequence=[BLEU_CLAIR],
-    )
-    fig.update_layout(
-        plot_bgcolor=FOND_CARTE,
-        paper_bgcolor=FOND,
-        font_color="#f0f0f0",
-        title_font_color=BLEU,
-        bargap=0.1,
-        xaxis=dict(
-            showgrid=False,
-            tickmode="linear",
-            dtick=5,
-        ),
-        yaxis=dict(
-            gridcolor="#1a1a2e",
-        ),
-    )
-    fig.update_traces(
-        marker_line_color=ROUGE,
-        marker_line_width=0.5,
-    )
-    st.plotly_chart(fig, use_container_width=True)
+LAYOUT = dict(
+    plot_bgcolor="rgba(7,14,28,0.0)",
+    paper_bgcolor="rgba(0,0,0,0)",
+    font=dict(family="Lato, sans-serif", color=TEXTE, size=12),
+    title_font=dict(family="Cinzel, serif", color=OR_PALE, size=14),
+    xaxis=dict(
+        showgrid=False,
+        color=TEXTE,
+        linecolor="rgba(233,168,76,0.2)",
+        tickfont=dict(size=11),
+    ),
+    yaxis=dict(
+        gridcolor="rgba(233,168,76,0.06)",
+        color=TEXTE,
+        linecolor="rgba(233,168,76,0.2)",
+        tickfont=dict(size=11),
+    ),
+    margin=dict(t=50, b=30, l=10, r=10),
+    legend=dict(
+        bgcolor="rgba(7,14,28,0.7)",
+        bordercolor="rgba(233,168,76,0.2)",
+        borderwidth=1,
+        font=dict(color=TEXTE),
+    ),
+)
 
 
-def chart_chapters_by_year(df):
-    """Graphique : nombre de chapitres publiés par année."""
-    df = df.copy()
-    df["year"] = pd.to_datetime(df["published_at"]).dt.year
+def chart_evolution(df):
+    fig = go.Figure()
 
-    counts = (
-        df.groupby("year")
-        .size()
-        .reset_index(name="chapitres")
-    )
-
-    fig = px.line(
-        counts,
-        x="year",
-        y="chapitres",
-        title="Chapitres publiés par année",
-        markers=True,
-        labels={"year": "Année", "chapitres": "Nb chapitres"},
-    )
-    fig.update_traces(
-        line_color=ROUGE,
-        marker_color=BLEU_CLAIR,
-        marker_size=10,
+    # Zone remplie
+    fig.add_trace(go.Scatter(
+        x=df["chapter_number"],
+        y=df["image_count"],
+        mode="lines",
+        name="Pages / chapitre",
+        line=dict(color=CIEL, width=1, shape="spline"),
         fill="tozeroy",
-        fillcolor="rgba(0, 48, 135, 0.15)",
-    )
+        fillcolor="rgba(27,79,122,0.2)",
+    ))
+
+    # Moyenne mobile 50
+    rolling = df["image_count"].rolling(50, center=True).mean()
+    fig.add_trace(go.Scatter(
+        x=df["chapter_number"],
+        y=rolling,
+        mode="lines",
+        name="Tendance (50 chap.)",
+        line=dict(color=OR, width=2.5, shape="spline"),
+    ))
+
     fig.update_layout(
-        plot_bgcolor=FOND_CARTE,
-        paper_bgcolor=FOND,
-        font_color="#f0f0f0",
-        title_font_color=BLEU,
-        xaxis=dict(showgrid=False),
-        yaxis=dict(gridcolor="#1a1a2e"),
+        title="ÉVOLUTION DU NOMBRE DE PAGES",
+        **LAYOUT,
+        height=320,
     )
     st.plotly_chart(fig, use_container_width=True)
 
 
-def chart_recent_chapters(df):
-    """Tableau des 10 derniers chapitres publiés."""
-    recent = (
-        df.sort_values("chapter_number", ascending=False)
-        .head(10)[["chapter_number", "title", "published_at"]]
-        .rename(columns={
-            "chapter_number": "Chapitre",
-            "title": "Titre",
-            "published_at": "Publié le",
-        })
+def chart_distribution(df):
+    fig = go.Figure()
+    fig.add_trace(go.Histogram(
+        x=df["image_count"],
+        nbinsx=28,
+        name="Chapitres",
+        marker=dict(
+            color=TEAL,
+            opacity=0.85,
+            line=dict(color=TEAL2, width=0.5),
+        ),
+    ))
+    fig.update_layout(
+        title="DISTRIBUTION DES PAGES",
+        **LAYOUT,
+        height=280,
+        bargap=0.05,
     )
-    st.dataframe(recent, use_container_width=True, hide_index=True)
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def chart_tranches(df):
+    df = df.copy()
+    df["tranche"] = (df["chapter_number"] // 100) * 100
+    moy = (
+        df.groupby("tranche")["image_count"]
+        .mean().round(1).reset_index()
+        .rename(columns={"image_count": "moy"})
+    )
+    moy["label"] = moy["tranche"].apply(lambda x: f"{x}–{x+99}")
+
+    colors = [OR if v == moy["moy"].max() else CIEL for v in moy["moy"]]
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=moy["label"],
+        y=moy["moy"],
+        marker=dict(color=colors, opacity=0.9),
+        text=moy["moy"],
+        textposition="outside",
+        textfont=dict(color=OR_PALE, size=10),
+    ))
+    fig.update_layout(
+        title="MOYENNE PAR TRANCHE DE 100 CHAPITRES",
+        **LAYOUT,
+        height=280,
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def chart_top10(df):
+    top = df.nlargest(10, "image_count").copy()
+    top = top.sort_values("image_count")
+    top["label"] = top["chapter_number"].apply(lambda x: f"Chapitre {x}")
+
+    colors = [
+        f"rgba(233,168,76,{0.5 + i*0.05})"
+        for i in range(len(top))
+    ]
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=top["image_count"],
+        y=top["label"],
+        orientation="h",
+        marker=dict(color=colors),
+        text=top["image_count"].apply(lambda x: f"{x} pages"),
+        textposition="inside",
+        textfont=dict(color=FOND, size=11, family="Cinzel"),
+    ))
+    fig.update_layout(
+        title="TOP 10 — CHAPITRES LES PLUS LONGS",
+        **LAYOUT,
+        height=340,
+    )
+    fig.update_xaxes(showgrid=False, showticklabels=False)
+    st.plotly_chart(fig, use_container_width=True)
 
 
 # ============================================================
@@ -201,78 +314,85 @@ def chart_recent_chapters(df):
 
 def main():
     st.set_page_config(
-        page_title="One Piece Dashboard",
+        page_title="One Piece — Data Pipeline",
         page_icon="🏴‍☠️",
         layout="wide",
     )
 
     apply_style()
 
-    # Titre
-    st.title("🏴‍☠️ One Piece — Dashboard")
+    # Header
+    st.title("ONE PIECE")
     st.markdown(
-        "<p style='text-align:center; color:#888;'>"
-        "Statistiques des chapitres • Source : MangaDex API"
-        "</p>",
+        f"<p style='text-align:center; color:{TEAL2}; "
+        f"letter-spacing:5px; font-size:0.75rem; "
+        f"font-family:Cinzel,serif; margin-top:-8px;'>"
+        f"DATA PIPELINE &nbsp;•&nbsp; 1172 CHAPITRES &nbsp;•&nbsp; VF"
+        f"</p>",
         unsafe_allow_html=True,
     )
+
     st.markdown("---")
 
-    # Chargement
-    with st.spinner("Chargement depuis BigQuery..."):
+    with st.spinner("Navigation vers les données..."):
         df = get_chapters()
 
     if df.empty:
         st.error("Aucune donnée trouvée dans BigQuery.")
         return
 
-    # Métriques
-    st.subheader("📊 Vue générale")
-    col1, col2, col3, col4 = st.columns(4)
+    # ── Métriques ──────────────────────────────────────────
+    c1, c2, c3, c4, c5 = st.columns(5)
+    with c1:
+        st.metric("Chapitres", f"{len(df):,}")
+    with c2:
+        st.metric("Premier", f"# {df['chapter_number'].min()}")
+    with c3:
+        st.metric("Dernier", f"# {df['chapter_number'].max()}")
+    with c4:
+        st.metric("Moy. pages", f"{df['image_count'].mean():.1f}")
+    with c5:
+        st.metric("Total pages", f"{df['image_count'].sum():,}")
 
+    st.markdown("---")
+
+    # ── Graphique principal ─────────────────────────────────
+    chart_evolution(df)
+
+    st.markdown("---")
+
+    # ── Graphiques secondaires ──────────────────────────────
+    col1, col2 = st.columns(2)
     with col1:
-        st.metric("Chapitres récupérés", len(df))
+        chart_distribution(df)
     with col2:
-        st.metric("Premier chapitre", f"#{df['chapter_number'].min()}")
-    with col3:
-        st.metric("Dernier chapitre", f"#{df['chapter_number'].max()}")
-    with col4:
-        nb_volumes = int(df["volume"].notna().sum())
-        st.metric("Chapitres avec tome", nb_volumes)
+        chart_tranches(df)
 
     st.markdown("---")
 
-    # Graphiques côte à côte
-    st.subheader("📈 Statistiques")
-    col_left, col_right = st.columns(2)
-
-    with col_left:
-        chart_chapters_by_volume(df)
-
-    with col_right:
-        chart_chapters_by_year(df)
+    # ── Top 10 ─────────────────────────────────────────────
+    chart_top10(df)
 
     st.markdown("---")
 
-    # Derniers chapitres
-    st.subheader("🆕 Derniers chapitres publiés")
-    chart_recent_chapters(df)
+    # ── Explorateur ────────────────────────────────────────
+    st.subheader("Explorer")
+    c_min, c_max = st.columns(2)
+    with c_min:
+        mn = st.number_input("De", 1, int(df["chapter_number"].max()), 1)
+    with c_max:
+        mx = st.number_input("À", 1, int(df["chapter_number"].max()), 100)
 
-    st.markdown("---")
+    filtered = df[
+        (df["chapter_number"] >= mn) &
+        (df["chapter_number"] <= mx)
+    ][["chapter_number", "image_count", "scraped_at"]].rename(columns={
+        "chapter_number": "Chapitre",
+        "image_count": "Pages",
+        "scraped_at": "Récupéré le",
+    })
 
-    # Tableau complet
-    st.subheader("📖 Tous les chapitres")
-    st.dataframe(
-        df[["chapter_number", "title", "volume", "published_at"]]
-        .rename(columns={
-            "chapter_number": "Chapitre",
-            "title": "Titre",
-            "volume": "Tome",
-            "published_at": "Publié le",
-        }),
-        use_container_width=True,
-        hide_index=True,
-    )
+    st.dataframe(filtered, use_container_width=True, hide_index=True)
 
 
 if __name__ == "__main__":

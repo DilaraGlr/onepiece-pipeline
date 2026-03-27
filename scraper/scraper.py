@@ -125,7 +125,7 @@ def main():
     print("\n🖼️  Récupération des images (5 premiers chapitres)...")
 
     results = []
-    for chap in chapters[:5]:
+    for chap in chapters:
         print(f"  📖 Chapitre {chap['number']}...")
         images = get_chapter_images(chap["url"])
 
