@@ -18,7 +18,7 @@ Liste des problèmes connus et améliorations à faire.
 
 ## 🔴 Bugs à corriger
 
-- [ ] **Warning OpenSSL au lancement du scraper en local**
+- [X] **Warning OpenSSL au lancement du scraper en local**
   ```
   NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+
   ```
