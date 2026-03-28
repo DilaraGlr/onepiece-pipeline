@@ -121,11 +121,13 @@ def main():
         return
 
     # Étape 2 — Pour chaque chapitre, on récupère les images
-    # On commence par les 5 premiers pour tester
-    print("\n🖼️  Récupération des images (5 premiers chapitres)...")
+    # Limite configurable via variable d'environnement (défaut: 5)
+    import os
+    limit = int(os.getenv("CHAPTER_LIMIT", "5"))
+    print(f"\n🖼️  Récupération des images ({limit} chapitres)...")
 
     results = []
-    for chap in chapters:
+    for chap in chapters[:limit]:
         print(f"  📖 Chapitre {chap['number']}...")
         images = get_chapter_images(chap["url"])
 

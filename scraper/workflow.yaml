@@ -1,0 +1,17 @@
+main:
+  steps:
+    - launch_scraper:
+        call: http.post
+        args:
+          url: ${"https://run.googleapis.com/v2/projects/onepiece-pipeline/locations/europe-west1/jobs/onepiece-scraper-job:run"}
+          auth:
+            type: OAuth2
+        result: job_response
+
+    - wait_for_completion:
+        call: sys.sleep
+        args:
+          seconds: 1500
+
+    - done:
+        return: "Pipeline One Piece terminé avec succès !"
