@@ -2,6 +2,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 from google.cloud import bigquery
+from google.oauth2 import service_account
 
 # ============================================================
 # CONFIGURATION
@@ -155,7 +156,13 @@ def apply_style():
 
 @st.cache_data
 def get_chapters():
-    client = bigquery.Client(project=PROJECT_ID)
+    credentials = service_account.Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"]
+    )
+    client = bigquery.Client(
+        project=PROJECT_ID,
+        credentials=credentials,
+    )
     query = f"""
         SELECT
             CAST(chapter_number AS INT64) AS chapter_number,
