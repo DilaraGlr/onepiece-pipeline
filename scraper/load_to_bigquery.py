@@ -37,9 +37,6 @@ def format_chapter(chapter):
     """
     Convertit un chapitre brut en dictionnaire
     compatible avec BigQuery.
-    On n'envoie PAS image_urls car c'est une liste —
-    BigQuery nécessite un type ARRAY pour ça,
-    qu'on ajoutera plus tard.
     """
     return {
         "chapter_number": chapter.get("chapter_number"),
@@ -65,8 +62,10 @@ def load_to_bigquery(chapters):
 
     print(f"📤 Envoi de {len(rows)} chapitres vers BigQuery...")
 
+    # WRITE_APPEND = on ajoute sans écraser les données existantes
+    # Les nouveaux chapitres s'ajoutent à la suite
     job_config = bigquery.LoadJobConfig(
-        write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
+        write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
         source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
     )
 

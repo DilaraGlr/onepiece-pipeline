@@ -1,9 +1,11 @@
 import json
+import os
 import time
 from datetime import datetime, timezone
 
 import requests
 from bs4 import BeautifulSoup
+from google.cloud import bigquery
 
 # ============================================================
 # CONFIGURATION
@@ -11,6 +13,8 @@ from bs4 import BeautifulSoup
 
 BASE_URL = "https://onepiecescan.fr"
 MANGA_URL = f"{BASE_URL}/manga/one-piece/"
+PROJECT_ID = "onepiece-pipeline"
+TABLE_REF = "onepiece-pipeline.onepiece.chapters"
 
 HEADERS = {
     "User-Agent": (
@@ -20,6 +24,30 @@ HEADERS = {
     ),
     "Referer": BASE_URL,
 }
+
+
+# ============================================================
+# ÉTAPE 0 — Récupérer le dernier chapitre dans BigQuery
+# ============================================================
+
+def get_last_chapter_from_bq():
+    """
+    Interroge BigQuery pour savoir quel est le dernier
+    chapitre déjà stocké. Retourne 0 si la table est vide.
+    """
+    print("\n🔍 Vérification du dernier chapitre dans BigQuery...")
+
+    client = bigquery.Client(project=PROJECT_ID)
+    query = f"""
+        SELECT MAX(chapter_number) as last_chapter
+        FROM `{TABLE_REF}`
+    """
+    result = client.query(query).result()
+    row = list(result)[0]
+
+    last = row.last_chapter if row.last_chapter else 0
+    print(f"✅ Dernier chapitre connu : #{last}")
+    return int(last)
 
 
 # ============================================================
@@ -42,13 +70,10 @@ def get_chapter_list():
 
     soup = BeautifulSoup(response.text, "html.parser")
 
-    # On cherche tous les liens qui contiennent 'chapitre'
     chapters = []
     for a in soup.find_all("a", href=True):
         href = a["href"]
         if "chapitre" in href.lower() and "vf" in href.lower():
-            # On extrait le numéro du chapitre depuis l'URL
-            # ex: one-piece-scan-chapitre-1-vf → 1
             parts = href.split("chapitre-")
             if len(parts) > 1:
                 num = parts[1].split("-vf")[0]
@@ -61,7 +86,6 @@ def get_chapter_list():
                 except ValueError:
                     pass
 
-    # Dédoublonnage par numéro
     seen = set()
     unique = []
     for chap in chapters:
@@ -69,10 +93,9 @@ def get_chapter_list():
             seen.add(chap["number"])
             unique.append(chap)
 
-    # Tri par numéro
     unique.sort(key=lambda x: float(x["number"]))
 
-    print(f"✅ {len(unique)} chapitres trouvés")
+    print(f"✅ {len(unique)} chapitres trouvés sur le site")
     return unique
 
 
@@ -93,7 +116,6 @@ def get_chapter_images(chapter_url):
 
     soup = BeautifulSoup(response.text, "html.parser")
 
-    # Les images sont dans data-src (lazy loading)
     images = []
     for img in soup.find_all("img", attrs={"data-src": True}):
         src = img["data-src"]
@@ -113,21 +135,47 @@ def main():
     print("🏴‍☠️  One Piece — Scraper OnePieceScan")
     print("=" * 50)
 
-    # Étape 1 — Liste des chapitres
-    chapters = get_chapter_list()
+    # Étape 0 — On vérifie le dernier chapitre dans BigQuery
+    # Si CHAPTER_LIMIT est défini, on ignore BigQuery et on
+    # scrape les N premiers chapitres (utile pour les tests)
+    limit = int(os.getenv("CHAPTER_LIMIT", "0"))
 
-    if not chapters:
+    if limit > 0:
+        # Mode test — on scrape les N premiers chapitres
+        last_chapter = 0
+        print(f"\n⚙️  Mode test : scraping des {limit} premiers chapitres")
+    else:
+        # Mode prod — on scrape uniquement les nouveaux
+        last_chapter = get_last_chapter_from_bq()
+
+    # Étape 1 — Liste des chapitres sur le site
+    all_chapters = get_chapter_list()
+
+    if not all_chapters:
         print("Aucun chapitre trouvé.")
         return
 
-    # Étape 2 — Pour chaque chapitre, on récupère les images
-    # Limite configurable via variable d'environnement (défaut: 5)
-    import os
-    limit = int(os.getenv("CHAPTER_LIMIT", "5"))
-    print(f"\n🖼️  Récupération des images ({limit} chapitres)...")
+    # On filtre selon le mode
+    if limit > 0:
+        chapters_to_scrape = all_chapters[:limit]
+    else:
+        chapters_to_scrape = [
+            c for c in all_chapters
+            if int(float(c["number"])) > last_chapter
+        ]
 
+    if not chapters_to_scrape:
+        print("\n✅ Aucun nouveau chapitre à scraper !")
+        return
+
+    print(
+        f"\n🖼️  {len(chapters_to_scrape)} nouveaux chapitres "
+        f"à scraper..."
+    )
+
+    # Étape 2 — Scraping des images
     results = []
-    for chap in chapters[:limit]:
+    for chap in chapters_to_scrape:
         print(f"  📖 Chapitre {chap['number']}...")
         images = get_chapter_images(chap["url"])
 
@@ -140,8 +188,6 @@ def main():
         })
 
         print(f"     ✅ {len(images)} images trouvées")
-
-        # Pause de politesse entre chaque requête
         time.sleep(1)
 
     # Sauvegarde
@@ -149,7 +195,7 @@ def main():
         "manga": "One Piece",
         "source": "onepiecescan.fr",
         "language": "fr",
-        "total_chapters_available": len(chapters),
+        "total_chapters_available": len(all_chapters),
         "scraped_at": datetime.now(timezone.utc).isoformat(),
         "chapters": results,
     }

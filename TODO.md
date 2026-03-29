@@ -25,7 +25,7 @@ Liste des problèmes connus et améliorations à faire.
   Lié à Python 3.9 sur Mac. Ne bloque pas le fonctionnement.
   → Régler en mettant Python à jour ou en downgradant urllib3.
 
-- [ ] **Cloud Workflows — temps d'attente fixe**
+- [XJ] **Cloud Workflows — temps d'attente fixe**
   On attend 1500 secondes (25 min) au lieu de vraiment vérifier
   si le job est terminé.
   → Implémenter un polling qui vérifie l'état du job toutes les 30s.
