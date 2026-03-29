@@ -42,11 +42,11 @@ Liste des problèmes connus et améliorations à faire.
   On a les URLs des images mais on ne les affiche pas encore.
   → Ajouter un graphique sur le nombre d'images par chapitre au fil du temps.
 
-- [ ] **Scraper — ajouter la gestion des erreurs réseau**
+- [X] **Scraper — ajouter la gestion des erreurs réseau**
   Si onepiecescan.fr est indisponible, le scraper plante.
   → Ajouter un retry automatique avec `time.sleep` entre les tentatives.
 
-- [ ] **Scraper — détecter uniquement les nouveaux chapitres**
+- [X] **Scraper — détecter uniquement les nouveaux chapitres**
   Actuellement on scrape tous les 1172 chapitres à chaque exécution.
   → Comparer avec BigQuery pour ne récupérer que les chapitres manquants.
 

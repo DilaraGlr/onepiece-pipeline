@@ -27,6 +27,46 @@ HEADERS = {
 
 
 # ============================================================
+# UTILITAIRE — Requête avec retry automatique
+# ============================================================
+
+def request_with_retry(url, max_retries=3):
+    """
+    Appelle une URL avec retry automatique en cas d'erreur.
+    Attend 5s, 10s, puis 20s entre chaque tentative.
+    C'est ce qu'on appelle un exponential backoff.
+    """
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(
+                url,
+                headers=HEADERS,
+                timeout=30,
+            )
+            if response.status_code == 200:
+                return response
+
+            print(
+                f"  ⚠️ Statut {response.status_code} "
+                f"pour {url}"
+            )
+
+        except requests.exceptions.RequestException as e:
+            print(f"  ⚠️ Erreur réseau : {e}")
+
+        if attempt < max_retries - 1:
+            wait = 5 * (2 ** attempt)
+            print(
+                f"  🔄 Tentative {attempt + 1}/{max_retries}"
+                f" échouée, retry dans {wait}s..."
+            )
+            time.sleep(wait)
+
+    print(f"  ❌ Échec après {max_retries} tentatives : {url}")
+    return None
+
+
+# ============================================================
 # ÉTAPE 0 — Récupérer le dernier chapitre dans BigQuery
 # ============================================================
 
@@ -58,14 +98,13 @@ def get_chapter_list():
     """
     Va sur la page principale de One Piece et récupère
     la liste de tous les chapitres disponibles.
-    Retourne une liste de dictionnaires {number, url}.
     """
     print("\n📚 Récupération de la liste des chapitres...")
 
-    response = requests.get(MANGA_URL, headers=HEADERS)
+    response = request_with_retry(MANGA_URL)
 
-    if response.status_code != 200:
-        print(f"Erreur {response.status_code}")
+    if not response:
+        print("❌ Impossible d'accéder à onepiecescan.fr")
         return []
 
     soup = BeautifulSoup(response.text, "html.parser")
@@ -108,10 +147,9 @@ def get_chapter_images(chapter_url):
     Va sur la page d'un chapitre et extrait les URLs
     de toutes ses images depuis l'attribut data-src.
     """
-    response = requests.get(chapter_url, headers=HEADERS)
+    response = request_with_retry(chapter_url)
 
-    if response.status_code != 200:
-        print(f"Erreur {response.status_code} : {chapter_url}")
+    if not response:
         return []
 
     soup = BeautifulSoup(response.text, "html.parser")
@@ -135,27 +173,20 @@ def main():
     print("🏴‍☠️  One Piece — Scraper OnePieceScan")
     print("=" * 50)
 
-    # Étape 0 — On vérifie le dernier chapitre dans BigQuery
-    # Si CHAPTER_LIMIT est défini, on ignore BigQuery et on
-    # scrape les N premiers chapitres (utile pour les tests)
     limit = int(os.getenv("CHAPTER_LIMIT", "0"))
 
     if limit > 0:
-        # Mode test — on scrape les N premiers chapitres
         last_chapter = 0
-        print(f"\n⚙️  Mode test : scraping des {limit} premiers chapitres")
+        print(f"\n⚙️  Mode test : {limit} premiers chapitres")
     else:
-        # Mode prod — on scrape uniquement les nouveaux
         last_chapter = get_last_chapter_from_bq()
 
-    # Étape 1 — Liste des chapitres sur le site
     all_chapters = get_chapter_list()
 
     if not all_chapters:
         print("Aucun chapitre trouvé.")
         return
 
-    # On filtre selon le mode
     if limit > 0:
         chapters_to_scrape = all_chapters[:limit]
     else:
@@ -173,7 +204,6 @@ def main():
         f"à scraper..."
     )
 
-    # Étape 2 — Scraping des images
     results = []
     for chap in chapters_to_scrape:
         print(f"  📖 Chapitre {chap['number']}...")
@@ -190,7 +220,6 @@ def main():
         print(f"     ✅ {len(images)} images trouvées")
         time.sleep(1)
 
-    # Sauvegarde
     output = {
         "manga": "One Piece",
         "source": "onepiecescan.fr",
