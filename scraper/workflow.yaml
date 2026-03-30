@@ -6,12 +6,55 @@ main:
           url: ${"https://run.googleapis.com/v2/projects/onepiece-pipeline/locations/europe-west1/jobs/onepiece-scraper-job:run"}
           auth:
             type: OAuth2
-        result: job_response
+        result: scraper_response
 
-    - wait_for_completion:
-        call: sys.sleep
+    - wait_for_scraper:
+        steps:
+          - check_scraper:
+              call: http.get
+              args:
+                url: ${"https://run.googleapis.com/v2/" + scraper_response.body.name}
+                auth:
+                  type: OAuth2
+              result: scraper_status
+          - check_if_done:
+              switch:
+                - condition: ${scraper_status.body.completionTime != null}
+                  next: launch_ocr
+              next: sleep_scraper
+          - sleep_scraper:
+              call: sys.sleep
+              args:
+                seconds: 30
+              next: check_scraper
+
+    - launch_ocr:
+        call: http.post
         args:
-          seconds: 1500
+          url: ${"https://run.googleapis.com/v2/projects/onepiece-pipeline/locations/europe-west1/jobs/ocr-pipeline-job:run"}
+          auth:
+            type: OAuth2
+        result: ocr_response
+
+    - wait_for_ocr:
+        steps:
+          - check_ocr:
+              call: http.get
+              args:
+                url: ${"https://run.googleapis.com/v2/" + ocr_response.body.name}
+                auth:
+                  type: OAuth2
+              result: ocr_status
+          - check_ocr_done:
+              switch:
+                - condition: ${ocr_status.body.completionTime != null}
+                  next: done
+              next: sleep_ocr
+          - sleep_ocr:
+              call: sys.sleep
+              args:
+                seconds: 30
+              next: check_ocr
 
     - done:
         return: "Pipeline One Piece terminé avec succès !"
