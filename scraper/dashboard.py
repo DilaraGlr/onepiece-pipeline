@@ -1,3 +1,4 @@
+import json
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
@@ -12,6 +13,7 @@ PROJECT_ID = "onepiece-pipeline"
 DATASET_ID = "onepiece"
 TABLE_ID = "chapters"
 TABLE_REF = f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}"
+SPEAKERS_REF = f"{PROJECT_ID}.{DATASET_ID}.speakers"
 
 # Palette — coucher de soleil sur l'océan
 OR        = "#E9A84C"   # Or chaud sunset
@@ -157,7 +159,7 @@ def apply_style():
 @st.cache_data
 def get_chapters():
     credentials = service_account.Credentials.from_service_account_info(
-        st.secrets["gcp_service_account"]
+        json.loads(st.secrets["gcp_service_account"])
     )
     client = bigquery.Client(
         project=PROJECT_ID,
@@ -173,8 +175,33 @@ def get_chapters():
     return client.query(query).to_dataframe()
 
 
+@st.cache_data
+def get_speakers():
+    credentials = service_account.Credentials.from_service_account_info(
+        json.loads(st.secrets["gcp_service_account"])
+    )
+    client = bigquery.Client(
+        project=PROJECT_ID,
+        credentials=credentials,
+    )
+    query = f"""
+        SELECT
+            chapter_number,
+            speaker,
+            phrase,
+            luffy_says_it,
+            about_luffy
+        FROM `{SPEAKERS_REF}`
+        ORDER BY chapter_number
+    """
+    try:
+        return client.query(query).to_dataframe()
+    except Exception:
+        return pd.DataFrame()
+
+
 # ============================================================
-# GRAPHIQUES
+# GRAPHIQUES — CHAPITRES
 # ============================================================
 
 LAYOUT = dict(
@@ -207,7 +234,6 @@ LAYOUT = dict(
 def chart_evolution(df):
     fig = go.Figure()
 
-    # Zone remplie
     fig.add_trace(go.Scatter(
         x=df["chapter_number"],
         y=df["image_count"],
@@ -218,7 +244,6 @@ def chart_evolution(df):
         fillcolor="rgba(27,79,122,0.2)",
     ))
 
-    # Moyenne mobile 50
     rolling = df["image_count"].rolling(50, center=True).mean()
     fig.add_trace(go.Scatter(
         x=df["chapter_number"],
@@ -316,6 +341,53 @@ def chart_top10(df):
 
 
 # ============================================================
+# GRAPHIQUES — ROI DES PIRATES
+# ============================================================
+
+def chart_roi_par_chapitre(df):
+    par_chapitre = (
+        df.groupby("chapter_number")
+        .size()
+        .reset_index(name="occurrences")
+    )
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=par_chapitre["chapter_number"],
+        y=par_chapitre["occurrences"],
+        marker=dict(color=OR, opacity=0.85),
+        name="Occurrences",
+    ))
+    fig.update_layout(
+        title='OCCURRENCES DE "ROI DES PIRATES" PAR CHAPITRE',
+        **LAYOUT,
+        height=300,
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def chart_luffy_vs_autres(df):
+    luffy = df[df["luffy_says_it"]].shape[0]
+    autres = df[df["about_luffy"] & ~df["luffy_says_it"]].shape[0]
+    reste = df.shape[0] - luffy - autres
+
+    fig = go.Figure()
+    fig.add_trace(go.Pie(
+        labels=["Luffy le dit", "Quelqu'un parle de Luffy", "Autre contexte"],
+        values=[luffy, autres, reste],
+        marker=dict(colors=[OR, TEAL2, CIEL]),
+        textfont=dict(color=FOND, family="Cinzel"),
+        hole=0.4,
+    ))
+    fig.update_layout(
+        title='QUI PARLE DU "ROI DES PIRATES" ?',
+        **LAYOUT,
+        height=300,
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+
+# ============================================================
 # PROGRAMME PRINCIPAL
 # ============================================================
 
@@ -343,6 +415,7 @@ def main():
 
     with st.spinner("Navigation vers les données..."):
         df = get_chapters()
+        df_speakers = get_speakers()
 
     if df.empty:
         st.error("Aucune donnée trouvée dans BigQuery.")
@@ -379,6 +452,48 @@ def main():
 
     # ── Top 10 ─────────────────────────────────────────────
     chart_top10(df)
+
+    st.markdown("---")
+
+    # ── Roi des Pirates ────────────────────────────────────
+    st.subheader("🏴‍☠️ Roi des Pirates")
+
+    if df_speakers.empty:
+        st.info(
+            "L'analyse NLP est en cours de traitement. "
+            "Les statistiques apparaîtront ici automatiquement."
+        )
+    else:
+        luffy_count = df_speakers[df_speakers["luffy_says_it"]].shape[0]
+        about_count = df_speakers[df_speakers["about_luffy"]].shape[0]
+        total = df_speakers.shape[0]
+
+        r1, r2, r3 = st.columns(3)
+        with r1:
+            st.metric("Total mentions", f"{total:,}")
+        with r2:
+            st.metric("Luffy le dit", f"{luffy_count:,}")
+        with r3:
+            st.metric("Parlent de Luffy", f"{about_count:,}")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            chart_roi_par_chapitre(df_speakers)
+        with col2:
+            chart_luffy_vs_autres(df_speakers)
+
+        st.markdown("---")
+        st.subheader("Exemples de phrases")
+        exemples = (
+            df_speakers[df_speakers["luffy_says_it"]][["chapter_number", "phrase"]]
+            .drop_duplicates()
+            .head(10)
+            .rename(columns={
+                "chapter_number": "Chapitre",
+                "phrase": "Phrase",
+            })
+        )
+        st.dataframe(exemples, use_container_width=True, hide_index=True)
 
     st.markdown("---")
 
