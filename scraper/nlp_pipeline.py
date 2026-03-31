@@ -14,7 +14,6 @@ SPEAKERS_TABLE = "onepiece-pipeline.onepiece.speakers"
 SECRET_NAME = (
     "projects/onepiece-pipeline/secrets/anthropic-api-key/versions/latest"
 )
-TARGET_PHRASE = "roi des pirates"
 
 
 # ============================================================
@@ -69,7 +68,8 @@ def get_relevant_pages(client):
     query = f"""
         SELECT chapter_number, page_number, extracted_text
         FROM `{DIALOGUES_TABLE}`
-        WHERE LOWER(extracted_text) LIKE '%{TARGET_PHRASE}%'
+        WHERE LOWER(REGEXP_REPLACE(extracted_text, r'\\s+', ' '))
+              LIKE '%roi des pirates%'
         ORDER BY chapter_number, page_number
     """
     result = client.query(query).result()
@@ -84,22 +84,36 @@ def get_relevant_pages(client):
 # ============================================================
 
 def analyze_page_with_claude(anthropic_client, text, chapter, page):
-    prompt = f"""Voici le texte extrait d'une page de manga One Piece
+    prompt = f"""Tu es un expert du manga One Piece en français.
+Voici le texte extrait par OCR d'une page du manga
 (chapitre {chapter}, page {page}).
+
+CONTEXTE IMPORTANT :
+- Luffy peut être désigné par : "Luffy", "L", "Lu", "Monkey",
+  "Monkey D. Luffy", "le capitaine", "chapeau de paille",
+  ou simplement par "je/moi" dans un dialogue
+- Le texte OCR est souvent fragmenté — les bulles sont
+  séparées par des sauts de ligne
+- "luffy_says_it" = true si Luffy exprime lui-même
+  sa volonté de devenir roi des pirates
+  (phrases comme : "je serai", "je vais devenir",
+  "ce sera moi", "je deviendrai", "mon rêve")
+- "about_luffy" = true si quelqu'un d'autre mentionne
+  Luffy comme futur roi, ou si c'est un texte narratif
+  décrivant l'objectif de Luffy
 
 TEXTE:
 {text}
 
-Analyse ce texte et trouve toutes les occurrences où
-"roi des pirates" est mentionné.
+Trouve TOUTES les occurrences où "roi des pirates"
+est mentionné dans ce texte.
 
-Pour chaque occurrence, réponds UNIQUEMENT en JSON
-(sans markdown, sans explication) avec ce format exact:
+Réponds UNIQUEMENT en JSON sans markdown :
 {{
   "mentions": [
     {{
-      "speaker": "nom du personnage qui parle ou narrateur",
-      "phrase": "la phrase exacte contenant roi des pirates",
+      "speaker": "Luffy ou nom du personnage ou narrateur",
+      "phrase": "phrase exacte contenant roi des pirates",
       "luffy_says_it": true ou false,
       "about_luffy": true ou false
     }}
@@ -109,7 +123,7 @@ Pour chaque occurrence, réponds UNIQUEMENT en JSON
 - luffy_says_it = true si Luffy affirme qu'il sera roi des pirates
 - about_luffy = true si quelqu'un d'autre parle de Luffy comme roi
 
-Si aucune mention claire, retourne: {{"mentions": []}}"""
+Si aucune mention claire : {{"mentions": []}}"""
 
     response = anthropic_client.messages.create(
         model="claude-haiku-4-5-20251001",
