@@ -171,7 +171,7 @@ def apply_style():
 @st.cache_data
 def get_chapters():
     credentials = service_account.Credentials.from_service_account_info(
-        dict(st.secrets["gcp_service_account"])
+        json.loads(st.secrets["gcp_service_account"]) if isinstance(st.secrets["gcp_service_account"], str) else dict(st.secrets["gcp_service_account"])
     )
     client = bigquery.Client(
         project=PROJECT_ID,
@@ -190,7 +190,7 @@ def get_chapters():
 @st.cache_data
 def get_speakers():
     credentials = service_account.Credentials.from_service_account_info(
-        dict(st.secrets["gcp_service_account"])
+        json.loads(st.secrets["gcp_service_account"]) if isinstance(st.secrets["gcp_service_account"], str) else dict(st.secrets["gcp_service_account"])
     )
     client = bigquery.Client(
         project=PROJECT_ID,
