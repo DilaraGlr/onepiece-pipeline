@@ -15,17 +15,38 @@ TABLE_ID = "chapters"
 TABLE_REF = f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}"
 SPEAKERS_REF = f"{PROJECT_ID}.{DATASET_ID}.speakers"
 
-# Palette — coucher de soleil sur l'océan
-OR        = "#E9A84C"   # Or chaud sunset
-OR_PALE   = "#F4C87A"   # Or pâle
-TEAL      = "#0A774D"   # Teal océan profond
-TEAL2     = "#1A9E6A"   # Teal clair
-ROUGE     = "#C0392B"   # Rouge sang de pirate
-OCEAN     = "#0B1D3A"   # Bleu océan profond
-OCEAN2    = "#0D2545"   # Bleu nuit
-CIEL      = "#1B4F7A"   # Bleu ciel horizon
-FOND      = "#070E1C"   # Fond ultra sombre
-TEXTE     = "#D4B896"   # Beige parchemin
+# Palette
+OR        = "#E9A84C"
+OR_PALE   = "#F4C87A"
+TEAL      = "#0A774D"
+TEAL2     = "#1A9E6A"
+ROUGE     = "#C0392B"
+OCEAN     = "#0B1D3A"
+OCEAN2    = "#0D2545"
+CIEL      = "#1B4F7A"
+FOND      = "#070E1C"
+TEXTE     = "#D4B896"
+
+# Arcs narratifs One Piece
+ARCS = [
+    {"nom": "East Blue",         "debut": 1,    "fin": 100,  "saga": "East Blue"},
+    {"nom": "Arabasta",          "debut": 101,  "fin": 216,  "saga": "Grand Line"},
+    {"nom": "Skypiea",           "debut": 217,  "fin": 302,  "saga": "Grand Line"},
+    {"nom": "Water Seven",       "debut": 303,  "fin": 441,  "saga": "Grand Line"},
+    {"nom": "Thriller Bark",     "debut": 442,  "fin": 489,  "saga": "Grand Line"},
+    {"nom": "Summit War",        "debut": 490,  "fin": 597,  "saga": "Grand Line"},
+    {"nom": "Fish-Man Island",   "debut": 598,  "fin": 653,  "saga": "New World"},
+    {"nom": "Dressrosa",         "debut": 654,  "fin": 801,  "saga": "New World"},
+    {"nom": "Whole Cake Island", "debut": 802,  "fin": 902,  "saga": "New World"},
+    {"nom": "Wano",              "debut": 903,  "fin": 1057, "saga": "New World"},
+    {"nom": "Egghead",           "debut": 1058, "fin": 1172, "saga": "New World"},
+]
+
+SAGA_COLORS = {
+    "East Blue": ROUGE,
+    "Grand Line": CIEL,
+    "New World": OR,
+}
 
 
 # ============================================================
@@ -150,7 +171,7 @@ def apply_style():
 @st.cache_data
 def get_chapters():
     credentials = service_account.Credentials.from_service_account_info(
-        json.loads(st.secrets["gcp_service_account"])
+        dict(st.secrets["gcp_service_account"])
     )
     client = bigquery.Client(
         project=PROJECT_ID,
@@ -169,7 +190,7 @@ def get_chapters():
 @st.cache_data
 def get_speakers():
     credentials = service_account.Credentials.from_service_account_info(
-        json.loads(st.secrets["gcp_service_account"])
+        dict(st.secrets["gcp_service_account"])
     )
     client = bigquery.Client(
         project=PROJECT_ID,
@@ -192,7 +213,7 @@ def get_speakers():
 
 
 # ============================================================
-# GRAPHIQUES — CHAPITRES
+# GRAPHIQUES
 # ============================================================
 
 LAYOUT = dict(
@@ -254,25 +275,57 @@ def chart_evolution(df):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def chart_distribution(df):
+def chart_arcs(df):
+    arcs_data = []
+    for arc in ARCS:
+        nb = df[
+            (df["chapter_number"] >= arc["debut"]) &
+            (df["chapter_number"] <= arc["fin"])
+        ].shape[0]
+        arcs_data.append({
+            "nom": arc["nom"],
+            "chapitres": nb,
+            "saga": arc["saga"],
+            "label": f"{arc['debut']}–{arc['fin']}",
+        })
+
+    df_arcs = pd.DataFrame(arcs_data)
+
     fig = go.Figure()
-    fig.add_trace(go.Histogram(
-        x=df["image_count"],
-        nbinsx=28,
-        name="Chapitres",
-        marker=dict(
-            color=TEAL,
-            opacity=0.85,
-            line=dict(color=TEAL2, width=0.5),
-        ),
-    ))
+
+    # Une trace par saga pour avoir une légende propre
+    for saga, color in SAGA_COLORS.items():
+        mask = df_arcs["saga"] == saga
+        fig.add_trace(go.Bar(
+            x=df_arcs[mask]["nom"],
+            y=df_arcs[mask]["chapitres"],
+            name=saga,
+            marker=dict(color=color, opacity=0.85),
+            text=df_arcs[mask]["chapitres"].apply(lambda x: f"{x} chap."),
+            textposition="outside",
+            textfont=dict(color=OR_PALE, size=10),
+            customdata=df_arcs[mask]["label"],
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "Chapitres : %{customdata}<br>"
+                "Total : %{y}<extra></extra>"
+            ),
+        ))
+
     fig.update_layout(
-        title="DISTRIBUTION DES PAGES PAR CHAPITRE",
-        **LAYOUT,
-        height=280,
-        bargap=0.05,
-        xaxis_title="Nombre de pages",
+        title="NOMBRE DE CHAPITRES PAR ARC NARRATIF",
+        plot_bgcolor="rgba(7,14,28,0.0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Lato, sans-serif", color=TEXTE, size=12),
+        title_font=dict(family="Cinzel, serif", color=OR_PALE, size=14),
+        xaxis=dict(showgrid=False, color=TEXTE, linecolor="rgba(233,168,76,0.2)", tickfont=dict(size=11)),
+        yaxis=dict(gridcolor="rgba(233,168,76,0.06)", color=TEXTE, linecolor="rgba(233,168,76,0.2)", tickfont=dict(size=11)),
+        legend=dict(bgcolor="rgba(7,14,28,0.7)", bordercolor="rgba(233,168,76,0.2)", borderwidth=1, font=dict(color=TEXTE)),
+        height=400,
+        margin=dict(t=80, b=30, l=10, r=10),
+        xaxis_title="Arc narratif",
         yaxis_title="Nombre de chapitres",
+        barmode="overlay",
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -300,8 +353,15 @@ def chart_tranches(df):
     ))
     fig.update_layout(
         title="MOYENNE DE PAGES PAR TRANCHE DE 100 CHAPITRES",
-        **LAYOUT,
-        height=280,
+        plot_bgcolor="rgba(7,14,28,0.0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Lato, sans-serif", color=TEXTE, size=12),
+        title_font=dict(family="Cinzel, serif", color=OR_PALE, size=14),
+        xaxis=dict(showgrid=False, color=TEXTE, linecolor="rgba(233,168,76,0.2)", tickfont=dict(size=11)),
+        yaxis=dict(gridcolor="rgba(233,168,76,0.06)", color=TEXTE, linecolor="rgba(233,168,76,0.2)", tickfont=dict(size=11)),
+        legend=dict(bgcolor="rgba(7,14,28,0.7)", bordercolor="rgba(233,168,76,0.2)", borderwidth=1, font=dict(color=TEXTE)),
+        height=400,
+        margin=dict(t=80, b=30, l=10, r=10),
         xaxis_title="Tranche de chapitres",
         yaxis_title="Moyenne de pages",
     )
@@ -337,10 +397,6 @@ def chart_top10(df):
     fig.update_xaxes(showgrid=False, showticklabels=False)
     st.plotly_chart(fig, use_container_width=True)
 
-
-# ============================================================
-# GRAPHIQUES — ROI DES PIRATES
-# ============================================================
 
 def chart_roi_par_chapitre(df):
     par_chapitre = (
@@ -408,7 +464,6 @@ def main():
         st.error("Aucune donnée trouvée dans BigQuery.")
         return
 
-    # Header dynamique
     total_chapitres = len(df)
     st.title("ONE PIECE")
     st.markdown(
@@ -423,30 +478,26 @@ def main():
 
     st.markdown("---")
 
-    # ── Métriques ──────────────────────────────────────────
-    c1, c2, c3, c4, c5 = st.columns(5)
+    # ── Métriques — 3 colonnes ─────────────────────────────
+    c1, c2, c3 = st.columns(3)
     with c1:
         st.metric("Chapitres", f"{len(df):,}")
     with c2:
-        st.metric("Premier", f"# {df['chapter_number'].min()}")
+        st.metric("Moy. pages / chapitre", f"{df['image_count'].mean():.1f}")
     with c3:
-        st.metric("Dernier", f"# {df['chapter_number'].max()}")
-    with c4:
-        st.metric("Moy. pages", f"{df['image_count'].mean():.1f}")
-    with c5:
-        st.metric("Total pages", f"{df['image_count'].sum():,}")
+        st.metric("Total pages scrapées", f"{df['image_count'].sum():,}")
 
     st.markdown("---")
 
-    # ── Graphique principal ─────────────────────────────────
+    # ── Évolution ──────────────────────────────────────────
     chart_evolution(df)
 
     st.markdown("---")
 
-    # ── Graphiques secondaires ──────────────────────────────
+    # ── Arcs narratifs + Moyenne par tranche ───────────────
     col1, col2 = st.columns(2)
     with col1:
-        chart_distribution(df)
+        chart_arcs(df)
     with col2:
         chart_tranches(df)
 
