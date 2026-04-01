@@ -42,7 +42,6 @@ def apply_style():
             background-attachment: fixed;
         }}
 
-        /* Titre */
         h1 {{
             font-family: 'Cinzel', serif !important;
             color: {OR} !important;
@@ -57,7 +56,6 @@ def apply_style():
             border: none !important;
         }}
 
-        /* Sous-titres */
         h2, h3 {{
             font-family: 'Cinzel', serif !important;
             color: {OR_PALE} !important;
@@ -68,13 +66,11 @@ def apply_style():
             opacity: 0.9;
         }}
 
-        /* Texte général */
         p, div, span, label {{
             font-family: 'Lato', sans-serif !important;
             color: {TEXTE} !important;
         }}
 
-        /* Séparateur */
         hr {{
             border: none !important;
             height: 1px !important;
@@ -88,7 +84,6 @@ def apply_style():
             margin: 28px 0 !important;
         }}
 
-        /* Métriques */
         [data-testid="stMetric"] {{
             background: linear-gradient(145deg,
                 rgba(11,29,58,0.9),
@@ -125,13 +120,11 @@ def apply_style():
             font-weight: 700 !important;
         }}
 
-        /* Tableau */
         [data-testid="stDataFrame"] {{
             border: 1px solid rgba(233,168,76,0.2) !important;
             border-radius: 4px !important;
         }}
 
-        /* Inputs */
         [data-baseweb="input"] {{
             background: rgba(11,29,58,0.8) !important;
             border: 1px solid rgba(233,168,76,0.3) !important;
@@ -141,12 +134,10 @@ def apply_style():
             font-family: 'Lato', sans-serif !important;
         }}
 
-        /* Scrollbar */
         ::-webkit-scrollbar {{ width: 4px; }}
         ::-webkit-scrollbar-track {{ background: {FOND}; }}
         ::-webkit-scrollbar-thumb {{ background: {OR}; border-radius: 2px; }}
 
-        /* Spinner */
         .stSpinner > div {{ border-top-color: {OR} !important; }}
         </style>
     """, unsafe_allow_html=True)
@@ -254,9 +245,11 @@ def chart_evolution(df):
     ))
 
     fig.update_layout(
-        title="ÉVOLUTION DU NOMBRE DE PAGES",
+        title="ÉVOLUTION DU NOMBRE DE PAGES PAR CHAPITRE",
         **LAYOUT,
         height=320,
+        xaxis_title="Numéro de chapitre",
+        yaxis_title="Nombre de pages",
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -274,10 +267,12 @@ def chart_distribution(df):
         ),
     ))
     fig.update_layout(
-        title="DISTRIBUTION DES PAGES",
+        title="DISTRIBUTION DES PAGES PAR CHAPITRE",
         **LAYOUT,
         height=280,
         bargap=0.05,
+        xaxis_title="Nombre de pages",
+        yaxis_title="Nombre de chapitres",
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -304,9 +299,11 @@ def chart_tranches(df):
         textfont=dict(color=OR_PALE, size=10),
     ))
     fig.update_layout(
-        title="MOYENNE PAR TRANCHE DE 100 CHAPITRES",
+        title="MOYENNE DE PAGES PAR TRANCHE DE 100 CHAPITRES",
         **LAYOUT,
         height=280,
+        xaxis_title="Tranche de chapitres",
+        yaxis_title="Moyenne de pages",
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -335,6 +332,7 @@ def chart_top10(df):
         title="TOP 10 — CHAPITRES LES PLUS LONGS",
         **LAYOUT,
         height=340,
+        xaxis_title="Nombre de pages",
     )
     fig.update_xaxes(showgrid=False, showticklabels=False)
     st.plotly_chart(fig, use_container_width=True)
@@ -362,6 +360,8 @@ def chart_roi_par_chapitre(df):
         title='OCCURRENCES DE "ROI DES PIRATES" PAR CHAPITRE',
         **LAYOUT,
         height=300,
+        xaxis_title="Numéro de chapitre",
+        yaxis_title="Nombre de mentions",
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -380,7 +380,7 @@ def chart_luffy_vs_autres(df):
         hole=0.4,
     ))
     fig.update_layout(
-        title='QUI PARLE DU "ROI DES PIRATES" ?',
+        title='QUI MENTIONNE "ROI DES PIRATES" ?',
         **LAYOUT,
         height=300,
     )
@@ -400,19 +400,6 @@ def main():
 
     apply_style()
 
-    # Header
-    st.title("ONE PIECE")
-    st.markdown(
-        f"<p style='text-align:center; color:{TEAL2}; "
-        f"letter-spacing:5px; font-size:0.75rem; "
-        f"font-family:Cinzel,serif; margin-top:-8px;'>"
-        f"DATA PIPELINE &nbsp;•&nbsp; 1172 CHAPITRES &nbsp;•&nbsp; VF"
-        f"</p>",
-        unsafe_allow_html=True,
-    )
-
-    st.markdown("---")
-
     with st.spinner("Navigation vers les données..."):
         df = get_chapters()
         df_speakers = get_speakers()
@@ -420,6 +407,21 @@ def main():
     if df.empty:
         st.error("Aucune donnée trouvée dans BigQuery.")
         return
+
+    # Header dynamique
+    total_chapitres = len(df)
+    st.title("ONE PIECE")
+    st.markdown(
+        f"<p style='text-align:center; color:{TEAL2}; "
+        f"letter-spacing:5px; font-size:0.75rem; "
+        f"font-family:Cinzel,serif; margin-top:-8px;'>"
+        f"DATA PIPELINE &nbsp;•&nbsp; {total_chapitres} CHAPITRES "
+        f"&nbsp;•&nbsp; VF"
+        f"</p>",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("---")
 
     # ── Métriques ──────────────────────────────────────────
     c1, c2, c3, c4, c5 = st.columns(5)
@@ -483,9 +485,11 @@ def main():
             chart_luffy_vs_autres(df_speakers)
 
         st.markdown("---")
-        st.subheader("Exemples de phrases")
+        st.subheader("Exemples de phrases de Luffy")
         exemples = (
-            df_speakers[df_speakers["luffy_says_it"]][["chapter_number", "phrase"]]
+            df_speakers[df_speakers["luffy_says_it"]][
+                ["chapter_number", "phrase"]
+            ]
             .drop_duplicates()
             .head(10)
             .rename(columns={
@@ -498,7 +502,7 @@ def main():
     st.markdown("---")
 
     # ── Explorateur ────────────────────────────────────────
-    st.subheader("Explorer")
+    st.subheader("Explorer les chapitres")
     c_min, c_max = st.columns(2)
     with c_min:
         mn = st.number_input("De", 1, int(df["chapter_number"].max()), 1)
