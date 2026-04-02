@@ -1,4 +1,5 @@
 import json
+import os
 
 from google.cloud import bigquery
 
@@ -89,6 +90,10 @@ def main():
     print("=" * 50)
     print("☁️   One Piece — Chargement vers BigQuery")
     print("=" * 50)
+
+    if not os.path.exists("output.json"):
+        print("ℹ️  Aucun nouveau chapitre à charger (output.json absent)")
+        return
 
     chapters = load_json("output.json")
 
