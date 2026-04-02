@@ -17,9 +17,14 @@ main:
                 auth:
                   type: OAuth2
               result: scraper_status
+          - log_scraper_status:
+              call: sys.log
+              args:
+                data: ${scraper_status.body}
+                severity: INFO
           - check_if_done:
               switch:
-                - condition: ${scraper_status.body.completionTime != null}
+                - condition: ${default(map.get(scraper_status.body, "done"), false) == true}
                   next: launch_ocr
               next: sleep_scraper
           - sleep_scraper:
@@ -47,7 +52,7 @@ main:
               result: ocr_status
           - check_ocr_done:
               switch:
-                - condition: ${ocr_status.body.completionTime != null}
+                - condition: ${default(map.get(ocr_status.body, "done"), false) == true}
                   next: done
               next: sleep_ocr
           - sleep_ocr:
