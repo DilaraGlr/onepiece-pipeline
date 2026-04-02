@@ -4,6 +4,12 @@ variable "project_id" {
   default     = "onepiece-pipeline"
 }
 
+variable "project_number" {
+  description = "Le numéro du projet Google Cloud"
+  type        = string
+  default     = "682150386282"
+}
+
 variable "region" {
   description = "La région Google Cloud utilisée pour tous les services"
   type        = string
@@ -11,7 +17,7 @@ variable "region" {
 }
 
 variable "chapter_limit" {
-  description = "Nombre de chapitres à scraper"
+  description = "Nombre de chapitres à scraper (0 = tous)"
   type        = string
-  default     = "1172"
+  default     = "0"
 }
