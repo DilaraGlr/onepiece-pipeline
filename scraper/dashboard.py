@@ -1,9 +1,11 @@
 import json
+import os
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 from google.cloud import bigquery
 from google.oauth2 import service_account
+from google.auth import default
 
 # ============================================================
 # CONFIGURATION
@@ -14,6 +16,9 @@ DATASET_ID = "onepiece"
 TABLE_ID = "chapters"
 TABLE_REF = f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}"
 SPEAKERS_REF = f"{PROJECT_ID}.{DATASET_ID}.speakers"
+
+# Détecter l'environnement
+IS_CLOUD_RUN = os.getenv("K_SERVICE") is not None
 
 # Palette
 OR        = "#E9A84C"
@@ -170,13 +175,17 @@ def apply_style():
 
 @st.cache_data
 def get_chapters():
-    credentials = service_account.Credentials.from_service_account_info(
-        json.loads(st.secrets["gcp_service_account"]) if isinstance(st.secrets["gcp_service_account"], str) else dict(st.secrets["gcp_service_account"])
-    )
-    client = bigquery.Client(
-        project=PROJECT_ID,
-        credentials=credentials,
-    )
+    if IS_CLOUD_RUN:
+        # Sur Cloud Run, utiliser les Application Default Credentials
+        credentials, _ = default()
+        client = bigquery.Client(project=PROJECT_ID, credentials=credentials)
+    else:
+        # En local ou sur Streamlit Cloud, utiliser st.secrets
+        credentials = service_account.Credentials.from_service_account_info(
+            json.loads(st.secrets["gcp_service_account"]) if isinstance(st.secrets["gcp_service_account"], str) else dict(st.secrets["gcp_service_account"])
+        )
+        client = bigquery.Client(project=PROJECT_ID, credentials=credentials)
+
     query = f"""
         SELECT
             CAST(chapter_number AS INT64) AS chapter_number,
@@ -189,13 +198,17 @@ def get_chapters():
 
 @st.cache_data
 def get_speakers():
-    credentials = service_account.Credentials.from_service_account_info(
-        json.loads(st.secrets["gcp_service_account"]) if isinstance(st.secrets["gcp_service_account"], str) else dict(st.secrets["gcp_service_account"])
-    )
-    client = bigquery.Client(
-        project=PROJECT_ID,
-        credentials=credentials,
-    )
+    if IS_CLOUD_RUN:
+        # Sur Cloud Run, utiliser les Application Default Credentials
+        credentials, _ = default()
+        client = bigquery.Client(project=PROJECT_ID, credentials=credentials)
+    else:
+        # En local ou sur Streamlit Cloud, utiliser st.secrets
+        credentials = service_account.Credentials.from_service_account_info(
+            json.loads(st.secrets["gcp_service_account"]) if isinstance(st.secrets["gcp_service_account"], str) else dict(st.secrets["gcp_service_account"])
+        )
+        client = bigquery.Client(project=PROJECT_ID, credentials=credentials)
+
     query = f"""
         SELECT
             chapter_number,
