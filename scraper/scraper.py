@@ -31,11 +31,7 @@ HEADERS = {
 # ============================================================
 
 def request_with_retry(url, max_retries=3):
-    """
-    Appelle une URL avec retry automatique en cas d'erreur.
-    Attend 5s, 10s, puis 20s entre chaque tentative.
-    C'est ce qu'on appelle un exponential backoff.
-    """
+    """Appelle une URL avec retry automatique en cas d'erreur."""
     for attempt in range(max_retries):
         try:
             response = requests.get(
@@ -73,7 +69,7 @@ def request_with_retry(url, max_retries=3):
 def get_last_chapter_from_bq():
     """
     Interroge BigQuery pour savoir quel est le dernier
-    chapitre déjà stocké. Retourne 0 si la table est vide.
+    chapitre déjà stocké.
     """
     print("\n🔍 Vérification du dernier chapitre dans BigQuery...")
 

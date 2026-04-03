@@ -63,8 +63,6 @@ def load_to_bigquery(chapters):
 
     print(f"📤 Envoi de {len(rows)} chapitres vers BigQuery...")
 
-    # WRITE_APPEND = on ajoute sans écraser les données existantes
-    # Les nouveaux chapitres s'ajoutent à la suite
     job_config = bigquery.LoadJobConfig(
         write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
         source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
