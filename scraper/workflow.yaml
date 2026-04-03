@@ -53,13 +53,41 @@ main:
           - check_ocr_done:
               switch:
                 - condition: ${default(map.get(ocr_status.body, "done"), false) == true}
-                  next: done
+                  next: launch_nlp
               next: sleep_ocr
           - sleep_ocr:
               call: sys.sleep
               args:
                 seconds: 30
               next: check_ocr
+
+    - launch_nlp:
+        call: http.post
+        args:
+          url: ${"https://run.googleapis.com/v2/projects/onepiece-pipeline/locations/europe-west1/jobs/nlp-pipeline-job:run"}
+          auth:
+            type: OAuth2
+        result: nlp_response
+
+    - wait_for_nlp:
+        steps:
+          - check_nlp:
+              call: http.get
+              args:
+                url: ${"https://run.googleapis.com/v2/" + nlp_response.body.name}
+                auth:
+                  type: OAuth2
+              result: nlp_status
+          - check_nlp_done:
+              switch:
+                - condition: ${default(map.get(nlp_status.body, "done"), false) == true}
+                  next: done
+              next: sleep_nlp
+          - sleep_nlp:
+              call: sys.sleep
+              args:
+                seconds: 30
+              next: check_nlp
 
     - done:
         return: "Pipeline One Piece terminé avec succès !"
