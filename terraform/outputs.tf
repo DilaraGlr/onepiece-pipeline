@@ -26,6 +26,10 @@ output "cloud_run_ocr" {
   value = google_cloud_run_v2_job.ocr.name
 }
 
+output "cloud_run_nlp" {
+  value = google_cloud_run_v2_job.nlp.name
+}
+
 output "cloud_run_dashboard" {
   value = google_cloud_run_v2_service.dashboard.name
 }

@@ -153,6 +153,20 @@ resource "google_cloud_run_v2_job" "ocr" {
   }
 }
 
+resource "google_cloud_run_v2_job" "nlp" {
+  name     = "nlp-pipeline-job"
+  location = var.region
+
+  template {
+    template {
+      containers {
+        image = "europe-west1-docker.pkg.dev/${var.project_id}/onepiece-repo/nlp-pipeline:latest"
+      }
+      timeout = "86400s"
+    }
+  }
+}
+
 # ============================================================
 # CLOUD RUN SERVICE (Dashboard)
 # ============================================================
