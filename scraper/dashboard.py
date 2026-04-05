@@ -176,11 +176,9 @@ def apply_style():
 @st.cache_data
 def get_chapters():
     if IS_CLOUD_RUN:
-        # Sur Cloud Run, utiliser les Application Default Credentials
         credentials, _ = default()
         client = bigquery.Client(project=PROJECT_ID, credentials=credentials)
     else:
-        # En local ou sur Streamlit Cloud, utiliser st.secrets
         credentials = service_account.Credentials.from_service_account_info(
             json.loads(st.secrets["gcp_service_account"]) if isinstance(st.secrets["gcp_service_account"], str) else dict(st.secrets["gcp_service_account"])
         )
@@ -199,7 +197,6 @@ def get_chapters():
 @st.cache_data
 def get_speakers():
     if IS_CLOUD_RUN:
-        # Sur Cloud Run, utiliser les Application Default Credentials
         credentials, _ = default()
         client = bigquery.Client(project=PROJECT_ID, credentials=credentials)
     else:
