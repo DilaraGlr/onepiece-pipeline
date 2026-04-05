@@ -67,10 +67,6 @@ def request_with_retry(url, max_retries=3):
 # ============================================================
 
 def get_last_chapter_from_bq():
-    """
-    Interroge BigQuery pour savoir quel est le dernier
-    chapitre déjà stocké.
-    """
     print("\n🔍 Vérification du dernier chapitre dans BigQuery...")
 
     client = bigquery.Client(project=PROJECT_ID)
@@ -91,10 +87,6 @@ def get_last_chapter_from_bq():
 # ============================================================
 
 def get_chapter_list():
-    """
-    Va sur la page principale de One Piece et récupère
-    la liste de tous les chapitres disponibles.
-    """
     print("\n📚 Récupération de la liste des chapitres...")
 
     response = request_with_retry(MANGA_URL)
@@ -139,10 +131,6 @@ def get_chapter_list():
 # ============================================================
 
 def get_chapter_images(chapter_url):
-    """
-    Va sur la page d'un chapitre et extrait les URLs
-    de toutes ses images depuis l'attribut data-src.
-    """
     response = request_with_retry(chapter_url)
 
     if not response:
@@ -164,7 +152,6 @@ def get_chapter_images(chapter_url):
 # ============================================================
 
 def main():
-    """Orchestre le scraping et sauvegarde les résultats."""
     print("=" * 50)
     print("🏴‍☠️  One Piece — Scraper OnePieceScan")
     print("=" * 50)

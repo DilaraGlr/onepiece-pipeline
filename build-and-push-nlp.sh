@@ -1,7 +1,3 @@
-#!/bin/bash
-
-# Script pour construire et pusher l'image Docker du NLP pipeline vers Artifact Registry
-
 set -e
 
 # Configuration
