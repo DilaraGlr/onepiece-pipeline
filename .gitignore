@@ -20,7 +20,5 @@ terraform.tfstate.backup
 .streamlit/
 streamlit-key.json
 
-# Todo files
-TODO.md
-DEPLOYMENT_TODO.md
-PRESENTATION_TODO.md
+# Markdown files (documentation locale uniquement)
+*.md
