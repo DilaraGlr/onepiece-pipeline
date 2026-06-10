@@ -116,6 +116,13 @@ resource "google_cloud_run_v2_job" "scraper" {
 
   template {
     template {
+      # Service account dédié pour le scraper
+      # Ce compte a UNIQUEMENT les permissions pour :
+      # - Écrire dans BigQuery (table chapters)
+      # - Écrire dans GCS (bucket manga_images)
+      # - Lire le secret Gemini (pour l'API OCR)
+      service_account = google_service_account.job_data.email
+
       containers {
         image = "europe-west1-docker.pkg.dev/${var.project_id}/onepiece-repo/scraper:latest"
 
@@ -140,6 +147,13 @@ resource "google_cloud_run_v2_job" "ocr" {
 
   template {
     template {
+      # Service account dédié pour l'OCR
+      # Ce compte a les mêmes permissions que le scraper car il :
+      # - Lit les images depuis GCS
+      # - Écrit les textes extraits dans BigQuery (table dialogues)
+      # - Utilise l'API Gemini (secret gemini-api-key)
+      service_account = google_service_account.job_data.email
+
       containers {
         image = "europe-west1-docker.pkg.dev/${var.project_id}/onepiece-repo/scraper:latest"
 
@@ -159,6 +173,14 @@ resource "google_cloud_run_v2_job" "nlp" {
 
   template {
     template {
+      # Service account dédié UNIQUEMENT pour le pipeline NLP
+      # Permissions plus restreintes que job_data :
+      # - Lit BigQuery (table dialogues)
+      # - Écrit BigQuery (table speakers)
+      # - Lit le secret Anthropic (Claude API)
+      # MAIS N'A PAS accès au GCS (pas besoin!)
+      service_account = google_service_account.job_nlp.email
+
       containers {
         image = "europe-west1-docker.pkg.dev/${var.project_id}/onepiece-repo/nlp-pipeline:latest"
       }
@@ -176,6 +198,17 @@ resource "google_cloud_run_v2_service" "dashboard" {
   location = var.region
 
   template {
+    # Service account LECTURE SEULE pour le dashboard
+    # Permissions minimales :
+    # - bigquery.dataViewer → Peut UNIQUEMENT LIRE les données
+    # - bigquery.user → Peut lancer des requêtes SELECT
+    # NE PEUT PAS :
+    # - Modifier les données (INSERT/UPDATE/DELETE bloqués)
+    # - Accéder aux secrets
+    # - Écrire dans GCS
+    # C'est le compte le plus restrictif de tous!
+    service_account = google_service_account.dashboard.email
+
     containers {
       image = "europe-west1-docker.pkg.dev/${var.project_id}/onepiece-repo/dashboard:latest"
 
@@ -217,15 +250,21 @@ resource "google_cloud_run_service_iam_member" "dashboard_public" {
 
 resource "google_cloud_scheduler_job" "weekly" {
   name     = "onepiece-scheduler"
-  schedule = "0 9 * * 1"
+  schedule = "0 9 * * 1"  # Tous les lundis à 9h00
   region   = var.region
 
   http_target {
     http_method = "POST"
     uri         = "https://workflowexecutions.googleapis.com/v1/projects/${var.project_id}/locations/${var.region}/workflows/onepiece-workflow/executions"
 
+    # Service account dédié pour le scheduler
+    # Permissions minimales :
+    # - workflows.invoker → Peut UNIQUEMENT déclencher le workflow
+    # NE PEUT PAS lancer directement les jobs Cloud Run
+    # NE PEUT PAS accéder aux données
+    # C'est juste un "réveil" qui déclenche le workflow
     oauth_token {
-      service_account_email = "${var.project_number}-compute@developer.gserviceaccount.com"
+      service_account_email = google_service_account.scheduler.email
     }
   }
 }
