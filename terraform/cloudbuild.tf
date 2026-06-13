@@ -126,6 +126,13 @@ resource "google_project_iam_member" "cloudbuild_logs_writer" {
 # ============================================================
 # Cloud Build (via Terraform) a besoin de créer/modifier diverses ressources
 
+# Permissions Cloud Storage (pour gérer tous les buckets)
+resource "google_project_iam_member" "cloudbuild_storage_admin" {
+  project = var.project_id
+  role    = "roles/storage.admin"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
+}
+
 # Permissions BigQuery
 resource "google_project_iam_member" "cloudbuild_bigquery_admin" {
   project = var.project_id
