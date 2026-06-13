@@ -124,7 +124,7 @@ resource "google_cloud_run_v2_job" "scraper" {
       service_account = google_service_account.job_data.email
 
       containers {
-        image = "europe-west1-docker.pkg.dev/${var.project_id}/onepiece-repo/scraper:latest"
+        image = "europe-west1-docker.pkg.dev/${var.project_id}/onepiece-repo/scraper:${var.image_tag}"
 
         env {
           name  = "CHAPTER_LIMIT"
@@ -155,7 +155,7 @@ resource "google_cloud_run_v2_job" "ocr" {
       service_account = google_service_account.job_data.email
 
       containers {
-        image = "europe-west1-docker.pkg.dev/${var.project_id}/onepiece-repo/scraper:latest"
+        image = "europe-west1-docker.pkg.dev/${var.project_id}/onepiece-repo/scraper:${var.image_tag}"
 
         env {
           name  = "PIPELINE_MODE"
@@ -182,7 +182,7 @@ resource "google_cloud_run_v2_job" "nlp" {
       service_account = google_service_account.job_nlp.email
 
       containers {
-        image = "europe-west1-docker.pkg.dev/${var.project_id}/onepiece-repo/nlp-pipeline:latest"
+        image = "europe-west1-docker.pkg.dev/${var.project_id}/onepiece-repo/nlp-pipeline:${var.image_tag}"
       }
       timeout = "86400s"
     }
@@ -210,7 +210,7 @@ resource "google_cloud_run_v2_service" "dashboard" {
     service_account = google_service_account.dashboard.email
 
     containers {
-      image = "europe-west1-docker.pkg.dev/${var.project_id}/onepiece-repo/dashboard:latest"
+      image = "europe-west1-docker.pkg.dev/${var.project_id}/onepiece-repo/dashboard:${var.image_tag}"
 
       ports {
         container_port = 8080
