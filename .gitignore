@@ -17,7 +17,7 @@ terraform.tfstate
 terraform.tfstate.backup
 
 # Streamlit secrets
-.streamlit/
+**/.streamlit/secrets.toml
 streamlit-key.json
 
 # Markdown files (documentation locale uniquement)
