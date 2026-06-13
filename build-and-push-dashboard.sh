@@ -5,7 +5,7 @@ PROJECT_ID="onepiece-pipeline"
 REGION="europe-west1"
 REPOSITORY="onepiece-repo"
 IMAGE_NAME="dashboard"
-TAG="latest"
+TAG=$(git rev-parse --short HEAD)
 
 # Construire l'URL complète de l'image
 IMAGE_URL="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${IMAGE_NAME}:${TAG}"

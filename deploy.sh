@@ -9,6 +9,7 @@ set -e  # Arrêter en cas d'erreur
 PROJECT_ID="onepiece-pipeline"
 REGION="europe-west1"
 REPOSITORY="onepiece-repo"
+TAG=$(git rev-parse --short HEAD)
 
 echo "============================================================"
 echo "🏴‍☠️  DÉPLOIEMENT COMPLET DU PIPELINE ONE PIECE"
@@ -16,6 +17,7 @@ echo "============================================================"
 echo ""
 echo "Projet: ${PROJECT_ID}"
 echo "Région: ${REGION}"
+echo "Tag Docker: ${TAG}"
 echo ""
 
 # ============================================================
@@ -23,24 +25,24 @@ echo ""
 # ============================================================
 
 echo "============================================================"
-echo "📦 ÉTAPE 1/3 : Build et push des images Docker"
+echo "📦 ÉTAPE 1/2 : Build et push des images Docker"
 echo "============================================================"
 echo ""
 
 cd scraper
 
 echo "▶️  1/3 - Build de l'image Scraper/OCR..."
-docker build --platform linux/amd64 -f Dockerfile -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/scraper:latest .
+docker build --platform linux/amd64 -f Dockerfile -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/scraper:${TAG} .
 echo "✅ Image Scraper/OCR buildée"
 echo ""
 
 echo "▶️  2/3 - Build de l'image Dashboard..."
-docker build --platform linux/amd64 -f Dockerfile.dashboard -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/dashboard:latest .
+docker build --platform linux/amd64 -f Dockerfile.dashboard -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/dashboard:${TAG} .
 echo "✅ Image Dashboard buildée"
 echo ""
 
 echo "▶️  3/3 - Build de l'image NLP..."
-docker build --platform linux/amd64 -f Dockerfile.nlp -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/nlp-pipeline:latest .
+docker build --platform linux/amd64 -f Dockerfile.nlp -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/nlp-pipeline:${TAG} .
 echo "✅ Image NLP buildée"
 echo ""
 
@@ -49,9 +51,9 @@ gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
 echo ""
 
 echo "⬆️  Push des 3 images vers Artifact Registry..."
-docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/scraper:latest
-docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/dashboard:latest
-docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/nlp-pipeline:latest
+docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/scraper:${TAG}
+docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/dashboard:${TAG}
+docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/nlp-pipeline:${TAG}
 echo ""
 echo "✅ Toutes les images sont pushées!"
 echo ""
@@ -63,7 +65,7 @@ cd ..
 # ============================================================
 
 echo "============================================================"
-echo "🏗️  ÉTAPE 2/3 : Déploiement de l'infrastructure Terraform"
+echo "🏗️  ÉTAPE 2/2 : Déploiement de l'infrastructure Terraform"
 echo "============================================================"
 echo ""
 
@@ -73,31 +75,16 @@ echo "▶️  Initialisation de Terraform..."
 terraform init
 echo ""
 
+echo "▶️  Génération du plan d'exécution..."
+terraform plan -var="image_tag=${TAG}" -out=tfplan
+echo ""
 echo "▶️  Déploiement de l'infrastructure..."
-terraform apply -auto-approve
+terraform apply tfplan
 echo ""
 echo "✅ Infrastructure déployée!"
 echo ""
 
 cd ..
-
-# ============================================================
-# ÉTAPE 3 : DÉPLOIEMENT DU WORKFLOW
-# ============================================================
-
-echo "============================================================"
-echo "🔄 ÉTAPE 3/3 : Déploiement du Cloud Workflow"
-echo "============================================================"
-echo ""
-
-echo "▶️  Déploiement du workflow onepiece-workflow..."
-gcloud workflows deploy onepiece-workflow \
-  --location=${REGION} \
-  --source=scraper/workflow.yaml \
-  --project=${PROJECT_ID}
-echo ""
-echo "✅ Workflow déployé!"
-echo ""
 
 # ============================================================
 # RÉSUMÉ FINAL
@@ -108,13 +95,12 @@ echo "🎉 DÉPLOIEMENT TERMINÉ AVEC SUCCÈS!"
 echo "============================================================"
 echo ""
 echo "✅ 3 images Docker pushées vers Artifact Registry"
-echo "✅ Infrastructure Terraform déployée"
-echo "✅ Cloud Workflow déployé"
+echo "✅ Infrastructure déployée (inclut le Cloud Workflow via Terraform)"
 echo ""
 echo "📊 Ressources déployées:"
 echo "   - Cloud Run Jobs: scraper, ocr, nlp"
 echo "   - Cloud Run Service: dashboard"
-echo "   - Cloud Workflows: onepiece-workflow"
+echo "   - Cloud Workflows: onepiece-workflow (géré par Terraform)"
 echo "   - Cloud Scheduler: onepiece-scheduler (lundi 9h)"
 echo "   - BigQuery: dataset onepiece + 3 tables"
 echo "   - Cloud Storage: bucket manga-images"
