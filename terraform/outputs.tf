@@ -42,3 +42,8 @@ output "dashboard_url" {
 output "scheduler" {
   value = google_cloud_scheduler_job.weekly.name
 }
+
+output "deployed_image_tag" {
+  value       = var.image_tag
+  description = "Tag Docker déployé (hash Git ou 'latest')"
+}

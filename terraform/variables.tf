@@ -21,3 +21,9 @@ variable "chapter_limit" {
   type        = string
   default     = "0"
 }
+
+variable "image_tag" {
+  description = "Tag Docker des images (hash Git ou 'latest')"
+  type        = string
+  default     = "latest"
+}
