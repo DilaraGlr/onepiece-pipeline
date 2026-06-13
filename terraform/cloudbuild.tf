@@ -157,7 +157,7 @@ resource "google_project_iam_member" "cloudbuild_workflows_admin" {
 # Permissions IAM (pour gérer les service accounts et leurs bindings)
 resource "google_project_iam_member" "cloudbuild_iam_admin" {
   project = var.project_id
-  role    = "roles/iam.securityAdmin"
+  role    = "roles/resourcemanager.projectIamAdmin"
   member  = "serviceAccount:${google_service_account.cloudbuild.email}"
 }
 
