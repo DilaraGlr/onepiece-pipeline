@@ -1,0 +1,160 @@
+# ============================================================
+# CLOUD BUILD CONFIGURATION
+# ============================================================
+# Ce fichier automatise le déploiement du pipeline One Piece
+# Déclenché automatiquement à chaque git push sur la branche main
+#
+# Étapes :
+# 1. Build des 3 images Docker avec tag $SHORT_SHA (hash Git)
+# 2. Push vers Artifact Registry
+# 3. Déploiement Terraform avec le tag $SHORT_SHA
+#
+# Variables automatiques Cloud Build :
+# - $PROJECT_ID : onepiece-pipeline
+# - $SHORT_SHA : Hash Git court (ex: a3f2b91)
+# - $_REGION : europe-west1 (substitution personnalisée)
+# ============================================================
+
+steps:
+  # ============================================================
+  # ÉTAPE 1/3 : BUILD DE L'IMAGE SCRAPER/OCR
+  # ============================================================
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-scraper'
+    args:
+      - 'build'
+      - '--platform=linux/amd64'
+      - '-f'
+      - 'scraper/Dockerfile'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/${PROJECT_ID}/onepiece-repo/scraper:${SHORT_SHA}'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/${PROJECT_ID}/onepiece-repo/scraper:latest'
+      - 'scraper/'
+    waitFor: ['-']  # Peut démarrer immédiatement (parallèle)
+
+  # ============================================================
+  # ÉTAPE 2/3 : BUILD DE L'IMAGE DASHBOARD
+  # ============================================================
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-dashboard'
+    args:
+      - 'build'
+      - '--platform=linux/amd64'
+      - '-f'
+      - 'scraper/Dockerfile.dashboard'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/${PROJECT_ID}/onepiece-repo/dashboard:${SHORT_SHA}'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/${PROJECT_ID}/onepiece-repo/dashboard:latest'
+      - 'scraper/'
+    waitFor: ['-']  # Parallèle avec build-scraper
+
+  # ============================================================
+  # ÉTAPE 3/3 : BUILD DE L'IMAGE NLP
+  # ============================================================
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-nlp'
+    args:
+      - 'build'
+      - '--platform=linux/amd64'
+      - '-f'
+      - 'scraper/Dockerfile.nlp'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/${PROJECT_ID}/onepiece-repo/nlp-pipeline:${SHORT_SHA}'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/${PROJECT_ID}/onepiece-repo/nlp-pipeline:latest'
+      - 'scraper/'
+    waitFor: ['-']  # Parallèle avec les 2 autres builds
+
+  # ============================================================
+  # ÉTAPE 4 : PUSH DE L'IMAGE SCRAPER
+  # ============================================================
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-scraper'
+    args:
+      - 'push'
+      - '--all-tags'
+      - 'europe-west1-docker.pkg.dev/${PROJECT_ID}/onepiece-repo/scraper'
+    waitFor: ['build-scraper']  # Attend que build-scraper soit terminé
+
+  # ============================================================
+  # ÉTAPE 5 : PUSH DE L'IMAGE DASHBOARD
+  # ============================================================
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-dashboard'
+    args:
+      - 'push'
+      - '--all-tags'
+      - 'europe-west1-docker.pkg.dev/${PROJECT_ID}/onepiece-repo/dashboard'
+    waitFor: ['build-dashboard']  # Attend que build-dashboard soit terminé
+
+  # ============================================================
+  # ÉTAPE 6 : PUSH DE L'IMAGE NLP
+  # ============================================================
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-nlp'
+    args:
+      - 'push'
+      - '--all-tags'
+      - 'europe-west1-docker.pkg.dev/${PROJECT_ID}/onepiece-repo/nlp-pipeline'
+    waitFor: ['build-nlp']  # Attend que build-nlp soit terminé
+
+  # ============================================================
+  # ÉTAPE 7 : TERRAFORM INIT
+  # ============================================================
+  - name: 'hashicorp/terraform:1.6'
+    id: 'terraform-init'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        cd terraform
+        terraform init
+    waitFor: ['-']  # Peut démarrer en parallèle des builds
+
+  # ============================================================
+  # ÉTAPE 8 : TERRAFORM APPLY
+  # ============================================================
+  # Applique l'infrastructure avec le tag Docker = hash Git
+  # -auto-approve est acceptable ici car le code a été reviewé via Pull Request
+  - name: 'hashicorp/terraform:1.6'
+    id: 'terraform-apply'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        cd terraform
+        terraform apply \
+          -var="image_tag=${SHORT_SHA}" \
+          -auto-approve
+    waitFor:
+      - 'terraform-init'
+      - 'push-scraper'
+      - 'push-dashboard'
+      - 'push-nlp'
+
+# ============================================================
+# OPTIONS
+# ============================================================
+options:
+  # Utilise une machine plus puissante pour accélérer les builds
+  machineType: 'E2_HIGHCPU_8'
+
+  # Timeout total de 30 minutes
+  timeout: '1800s'
+
+  # Active les logs détaillés
+  logging: CLOUD_LOGGING_ONLY
+
+# ============================================================
+# IMAGES BUILDÉES
+# ============================================================
+# Cloud Build tagge automatiquement ces images
+images:
+  - 'europe-west1-docker.pkg.dev/${PROJECT_ID}/onepiece-repo/scraper:${SHORT_SHA}'
+  - 'europe-west1-docker.pkg.dev/${PROJECT_ID}/onepiece-repo/scraper:latest'
+  - 'europe-west1-docker.pkg.dev/${PROJECT_ID}/onepiece-repo/dashboard:${SHORT_SHA}'
+  - 'europe-west1-docker.pkg.dev/${PROJECT_ID}/onepiece-repo/dashboard:latest'
+  - 'europe-west1-docker.pkg.dev/${PROJECT_ID}/onepiece-repo/nlp-pipeline:${SHORT_SHA}'
+  - 'europe-west1-docker.pkg.dev/${PROJECT_ID}/onepiece-repo/nlp-pipeline:latest'

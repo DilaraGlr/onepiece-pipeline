@@ -42,8 +42,7 @@
 # ============================================================
 # SERVICE ACCOUNT CLOUD BUILD
 # ============================================================
-# Cloud Build utilise un service account par défaut :
-# {project_number}@cloudbuild.gserviceaccount.com
+# Service account dédié pour Cloud Build (au lieu du SA système)
 #
 # Ce compte a besoin de permissions spécifiques pour :
 # 1. Pusher les images Docker vers Artifact Registry
@@ -53,9 +52,10 @@
 # 5. Écrire les logs de build
 # ============================================================
 
-locals {
-  # Service account par défaut de Cloud Build
-  cloudbuild_sa = "${var.project_number}@cloudbuild.gserviceaccount.com"
+resource "google_service_account" "cloudbuild" {
+  account_id   = "sa-cloudbuild"
+  display_name = "Service Account for Cloud Build"
+  description  = "SA utilisé par Cloud Build pour builder et déployer"
 }
 
 # ============================================================
@@ -66,7 +66,7 @@ locals {
 resource "google_project_iam_member" "cloudbuild_artifactregistry_writer" {
   project = var.project_id
   role    = "roles/artifactregistry.writer"
-  member  = "serviceAccount:${local.cloudbuild_sa}"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
 }
 
 # ============================================================
@@ -82,7 +82,7 @@ resource "google_project_iam_member" "cloudbuild_artifactregistry_writer" {
 resource "google_project_iam_member" "cloudbuild_run_developer" {
   project = var.project_id
   role    = "roles/run.developer"
-  member  = "serviceAccount:${local.cloudbuild_sa}"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
 }
 
 # ============================================================
@@ -95,7 +95,7 @@ resource "google_project_iam_member" "cloudbuild_run_developer" {
 resource "google_project_iam_member" "cloudbuild_sa_user" {
   project = var.project_id
   role    = "roles/iam.serviceAccountUser"
-  member  = "serviceAccount:${local.cloudbuild_sa}"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
 }
 
 # ============================================================
@@ -107,7 +107,7 @@ resource "google_project_iam_member" "cloudbuild_sa_user" {
 resource "google_storage_bucket_iam_member" "cloudbuild_tfstate_admin" {
   bucket = "onepiece-tfstate"
   role   = "roles/storage.admin"
-  member = "serviceAccount:${local.cloudbuild_sa}"
+  member = "serviceAccount:${google_service_account.cloudbuild.email}"
 }
 
 # ============================================================
@@ -118,7 +118,7 @@ resource "google_storage_bucket_iam_member" "cloudbuild_tfstate_admin" {
 resource "google_project_iam_member" "cloudbuild_logs_writer" {
   project = var.project_id
   role    = "roles/logging.logWriter"
-  member  = "serviceAccount:${local.cloudbuild_sa}"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
 }
 
 # ============================================================
@@ -130,35 +130,35 @@ resource "google_project_iam_member" "cloudbuild_logs_writer" {
 resource "google_project_iam_member" "cloudbuild_bigquery_admin" {
   project = var.project_id
   role    = "roles/bigquery.admin"
-  member  = "serviceAccount:${local.cloudbuild_sa}"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
 }
 
 # Permissions Cloud Scheduler
 resource "google_project_iam_member" "cloudbuild_cloudscheduler_admin" {
   project = var.project_id
   role    = "roles/cloudscheduler.admin"
-  member  = "serviceAccount:${local.cloudbuild_sa}"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
 }
 
 # Permissions Secret Manager
 resource "google_project_iam_member" "cloudbuild_secretmanager_admin" {
   project = var.project_id
   role    = "roles/secretmanager.admin"
-  member  = "serviceAccount:${local.cloudbuild_sa}"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
 }
 
 # Permissions Workflows
 resource "google_project_iam_member" "cloudbuild_workflows_admin" {
   project = var.project_id
   role    = "roles/workflows.admin"
-  member  = "serviceAccount:${local.cloudbuild_sa}"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
 }
 
 # Permissions IAM (pour gérer les service accounts et leurs bindings)
 resource "google_project_iam_member" "cloudbuild_iam_admin" {
   project = var.project_id
   role    = "roles/iam.securityAdmin"
-  member  = "serviceAccount:${local.cloudbuild_sa}"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
 }
 
 # ============================================================
@@ -178,7 +178,7 @@ resource "google_project_iam_member" "cloudbuild_iam_admin" {
 
 output "cloudbuild_service_account" {
   description = "Service account utilisé par Cloud Build"
-  value       = local.cloudbuild_sa
+  value       = google_service_account.cloudbuild.email
 }
 
 # ============================================================
