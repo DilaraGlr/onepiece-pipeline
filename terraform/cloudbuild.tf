@@ -59,112 +59,34 @@ resource "google_service_account" "cloudbuild" {
 }
 
 # ============================================================
-# PERMISSION 1/5 : Artifact Registry Writer
+# PERMISSIONS CLOUD BUILD
 # ============================================================
-# Permet à Cloud Build de pusher les images Docker buildées
+# Le SA Cloud Build a besoin de permissions larges pour que Terraform
+# puisse gérer toute l'infrastructure (Cloud Run, BigQuery, GCS, IAM, etc.)
+#
+# 3 rôles suffisants :
+# - roles/editor : gère toutes les ressources
+# - roles/resourcemanager.projectIamAdmin : gère les bindings IAM
+# - roles/storage.admin : gère GCS (buckets, objets, IAM)
 
-resource "google_project_iam_member" "cloudbuild_artifactregistry_writer" {
+# Rôle 1/3 : Editor (gère Cloud Run, BigQuery, Workflows, Scheduler, Secrets, etc.)
+resource "google_project_iam_member" "cloudbuild_editor" {
   project = var.project_id
-  role    = "roles/artifactregistry.writer"
+  role    = "roles/editor"
   member  = "serviceAccount:${google_service_account.cloudbuild.email}"
 }
 
-# ============================================================
-# PERMISSION 2/5 : Cloud Run Developer
-# ============================================================
-# Permet à Cloud Build de déployer/modifier les jobs et services Cloud Run
-# Nécessaire pour que terraform apply puisse créer/mettre à jour :
-# - google_cloud_run_v2_job.scraper
-# - google_cloud_run_v2_job.ocr
-# - google_cloud_run_v2_job.nlp
-# - google_cloud_run_v2_service.dashboard
-
-resource "google_project_iam_member" "cloudbuild_run_developer" {
-  project = var.project_id
-  role    = "roles/run.developer"
-  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
-}
-
-# ============================================================
-# PERMISSION 3/5 : Service Account User
-# ============================================================
-# Permet à Cloud Build d'agir en tant que les service accounts des jobs
-# Sans cette permission, Cloud Build ne peut pas créer de ressources
-# qui utilisent un service account personnalisé (sa-job-data, sa-job-nlp, etc.)
-
-resource "google_project_iam_member" "cloudbuild_sa_user" {
-  project = var.project_id
-  role    = "roles/iam.serviceAccountUser"
-  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
-}
-
-# ============================================================
-# PERMISSION 4/5 : Storage Admin sur le bucket tfstate
-# ============================================================
-# Permet à Cloud Build de lire/écrire le state Terraform
-# Nécessaire pour que terraform init/apply puisse fonctionner
-
-resource "google_storage_bucket_iam_member" "cloudbuild_tfstate_admin" {
-  bucket = "onepiece-tfstate"
-  role   = "roles/storage.admin"
-  member = "serviceAccount:${google_service_account.cloudbuild.email}"
-}
-
-# ============================================================
-# PERMISSION 5/5 : Logs Writer
-# ============================================================
-# Permet à Cloud Build d'écrire les logs de build dans Cloud Logging
-
-resource "google_project_iam_member" "cloudbuild_logs_writer" {
-  project = var.project_id
-  role    = "roles/logging.logWriter"
-  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
-}
-
-# ============================================================
-# PERMISSIONS SUPPLÉMENTAIRES POUR TERRAFORM
-# ============================================================
-# Cloud Build (via Terraform) a besoin de créer/modifier diverses ressources
-
-# Permissions Cloud Storage (pour gérer tous les buckets)
-resource "google_project_iam_member" "cloudbuild_storage_admin" {
-  project = var.project_id
-  role    = "roles/storage.admin"
-  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
-}
-
-# Permissions BigQuery
-resource "google_project_iam_member" "cloudbuild_bigquery_admin" {
-  project = var.project_id
-  role    = "roles/bigquery.admin"
-  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
-}
-
-# Permissions Cloud Scheduler
-resource "google_project_iam_member" "cloudbuild_cloudscheduler_admin" {
-  project = var.project_id
-  role    = "roles/cloudscheduler.admin"
-  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
-}
-
-# Permissions Secret Manager
-resource "google_project_iam_member" "cloudbuild_secretmanager_admin" {
-  project = var.project_id
-  role    = "roles/secretmanager.admin"
-  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
-}
-
-# Permissions Workflows
-resource "google_project_iam_member" "cloudbuild_workflows_admin" {
-  project = var.project_id
-  role    = "roles/workflows.admin"
-  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
-}
-
-# Permissions IAM (pour gérer les service accounts et leurs bindings)
+# Rôle 2/3 : Project IAM Admin (gère les bindings IAM)
 resource "google_project_iam_member" "cloudbuild_iam_admin" {
   project = var.project_id
   role    = "roles/resourcemanager.projectIamAdmin"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
+}
+
+# Rôle 3/3 : Storage Admin (gère tous les buckets GCS)
+resource "google_project_iam_member" "cloudbuild_storage_admin" {
+  project = var.project_id
+  role    = "roles/storage.admin"
   member  = "serviceAccount:${google_service_account.cloudbuild.email}"
 }
 
