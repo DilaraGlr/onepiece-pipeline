@@ -27,3 +27,17 @@ variable "image_tag" {
   type        = string
   default     = "latest"
 }
+
+variable "billing_account_id" {
+  description = "ID du compte de facturation Google Cloud (format: 012345-6789AB-CDEF01)"
+  type        = string
+  # Trouvez votre Billing Account ID ici :
+  # https://console.cloud.google.com/billing
+  # Ou via CLI : gcloud billing accounts list
+}
+
+variable "monthly_budget_amount" {
+  description = "Montant du budget mensuel en EUR (ou USD selon votre devise)"
+  type        = string
+  default     = "50"  # 50 EUR par défaut - ajustez selon vos besoins
+}
