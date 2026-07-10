@@ -8,11 +8,11 @@ from google.cloud import bigquery, secretmanager
 # CONFIGURATION
 # ============================================================
 
-PROJECT_ID = "onepiece-pipeline"
-DIALOGUES_TABLE = "onepiece-pipeline.onepiece.dialogues"
-SPEAKERS_TABLE = "onepiece-pipeline.onepiece.speakers"
+PROJECT_ID = "t-lexicon-231513"
+DIALOGUES_TABLE = "t-lexicon-231513.onepiece.dialogues"
+SPEAKERS_TABLE = "t-lexicon-231513.onepiece.speakers"
 SECRET_NAME = (
-    "projects/onepiece-pipeline/secrets/anthropic-api-key/versions/latest"
+    "projects/t-lexicon-231513/secrets/anthropic-api-key/versions/latest"
 )
 
 

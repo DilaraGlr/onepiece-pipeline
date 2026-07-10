@@ -11,7 +11,7 @@ from google.auth import default
 # CONFIGURATION
 # ============================================================
 
-PROJECT_ID = "onepiece-pipeline"
+PROJECT_ID = "t-lexicon-231513"
 DATASET_ID = "onepiece"
 TABLE_ID = "chapters"
 TABLE_REF = f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}"

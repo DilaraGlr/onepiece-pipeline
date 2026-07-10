@@ -13,8 +13,8 @@ from google.cloud import bigquery
 
 BASE_URL = "https://onepiecescan.fr"
 MANGA_URL = f"{BASE_URL}/manga/one-piece/"
-PROJECT_ID = "onepiece-pipeline"
-TABLE_REF = "onepiece-pipeline.onepiece.chapters"
+PROJECT_ID = "t-lexicon-231513"
+TABLE_REF = "t-lexicon-231513.onepiece.chapters"
 
 HEADERS = {
     "User-Agent": (

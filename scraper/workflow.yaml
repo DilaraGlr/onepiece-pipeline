@@ -3,7 +3,7 @@ main:
     - launch_scraper:
         call: http.post
         args:
-          url: ${"https://run.googleapis.com/v2/projects/onepiece-pipeline/locations/europe-west1/jobs/onepiece-scraper-job:run"}
+          url: ${"https://run.googleapis.com/v2/projects/t-lexicon-231513/locations/europe-west1/jobs/onepiece-scraper-job:run"}
           auth:
             type: OAuth2
         result: scraper_response
@@ -36,7 +36,7 @@ main:
     - launch_ocr:
         call: http.post
         args:
-          url: ${"https://run.googleapis.com/v2/projects/onepiece-pipeline/locations/europe-west1/jobs/ocr-pipeline-job:run"}
+          url: ${"https://run.googleapis.com/v2/projects/t-lexicon-231513/locations/europe-west1/jobs/ocr-pipeline-job:run"}
           auth:
             type: OAuth2
         result: ocr_response
@@ -64,7 +64,7 @@ main:
     - launch_nlp:
         call: http.post
         args:
-          url: ${"https://run.googleapis.com/v2/projects/onepiece-pipeline/locations/europe-west1/jobs/nlp-pipeline-job:run"}
+          url: ${"https://run.googleapis.com/v2/projects/t-lexicon-231513/locations/europe-west1/jobs/nlp-pipeline-job:run"}
           auth:
             type: OAuth2
         result: nlp_response
