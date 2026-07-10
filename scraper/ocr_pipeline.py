@@ -11,10 +11,10 @@ from google.cloud import bigquery, storage, vision
 # CONFIGURATION
 # ============================================================
 
-PROJECT_ID = "onepiece-pipeline"
-TABLE_REF = "onepiece-pipeline.onepiece.chapters"
-DIALOGUES_TABLE = "onepiece-pipeline.onepiece.dialogues"
-BUCKET_NAME = "onepiece-manga-images"
+PROJECT_ID = "t-lexicon-231513"
+TABLE_REF = "t-lexicon-231513.onepiece.chapters"
+DIALOGUES_TABLE = "t-lexicon-231513.onepiece.dialogues"
+BUCKET_NAME = "onepiece-manga-images-tlex"
 
 HEADERS = {
     "User-Agent": (

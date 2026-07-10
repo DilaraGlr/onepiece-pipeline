@@ -1,6 +1,2 @@
-terraform {
-  backend "gcs" {
-    bucket = "onepiece-tfstate"
-    prefix = "terraform/state"
-  }
-}
+# Backend GCS désactivé temporairement (ancien bucket inaccessible,
+# ancienne facturation fermée). State en local pour l'instant.

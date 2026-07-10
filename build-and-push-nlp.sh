@@ -1,7 +1,7 @@
 set -e
 
 # Configuration
-PROJECT_ID="onepiece-pipeline"
+PROJECT_ID="t-lexicon-231513"
 REGION="europe-west1"
 REPOSITORY="onepiece-repo"
 IMAGE_NAME="nlp-pipeline"

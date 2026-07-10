@@ -73,7 +73,7 @@ resource "google_bigquery_table" "speakers" {
 # ============================================================
 
 resource "google_storage_bucket" "manga_images" {
-  name          = "onepiece-manga-images"
+  name          = "onepiece-manga-images-tlex"
   location      = var.region
   force_destroy = false
 }

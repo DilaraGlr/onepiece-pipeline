@@ -7,7 +7,7 @@ from google.cloud import bigquery
 # CONFIGURATION
 # ============================================================
 
-PROJECT_ID = "onepiece-pipeline"
+PROJECT_ID = "t-lexicon-231513"
 DATASET_ID = "onepiece"
 TABLE_ID = "chapters"
 
