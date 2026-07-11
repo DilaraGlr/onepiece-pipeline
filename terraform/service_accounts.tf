@@ -26,11 +26,23 @@ resource "google_service_account" "workflow" {
 }
 
 # Permissions pour invoquer les jobs Cloud Run
-# run.invoker est SUFFISANT : le workflow vérifie le statut via l'API HTTP directement
-# run.viewer n'est PAS nécessaire et a été retiré pour le moindre privilège
 resource "google_project_iam_member" "workflow_run_invoker" {
   project = var.project_id
   role    = "roles/run.invoker"
+  member  = "serviceAccount:${google_service_account.workflow.email}"
+}
+
+# Permissions pour voir les jobs Cloud Run
+resource "google_project_iam_member" "workflow_run_viewer" {
+  project = var.project_id
+  role    = "roles/run.viewer"
+  member  = "serviceAccount:${google_service_account.workflow.email}"
+}
+
+# Permissions pour écrire les logs
+resource "google_project_iam_member" "workflow_logging_writer" {
+  project = var.project_id
+  role    = "roles/logging.logWriter"
   member  = "serviceAccount:${google_service_account.workflow.email}"
 }
 
