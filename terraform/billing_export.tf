@@ -46,6 +46,12 @@ resource "google_bigquery_dataset" "billing_export" {
     managed_by  = "terraform"
     purpose     = "billing_export"
   }
+
+  # Ignore les changements cosmétiques sur les blocs access
+  # GCP ajoute automatiquement des permissions par défaut qui peuvent différer
+  lifecycle {
+    ignore_changes = [access]
+  }
 }
 
 # Permission pour le compte de service Cloud Billing
