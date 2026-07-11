@@ -6,7 +6,7 @@
 set -e  # Arrêter en cas d'erreur
 
 # Configuration
-PROJECT_ID="onepiece-pipeline"
+PROJECT_ID="t-lexicon-231513"
 REGION="europe-west1"
 REPOSITORY="onepiece-repo"
 TAG=$(git rev-parse --short HEAD)
