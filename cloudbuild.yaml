@@ -10,7 +10,7 @@
 # 3. Déploiement Terraform avec le tag $SHORT_SHA
 #
 # Variables automatiques Cloud Build :
-# - $PROJECT_ID : onepiece-pipeline
+# - $PROJECT_ID : t-lexicon-231513
 # - $SHORT_SHA : Hash Git court (ex: a3f2b91)
 # - $_REGION : europe-west1 (substitution personnalisée)
 # ============================================================
