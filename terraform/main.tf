@@ -21,12 +21,20 @@ provider "google" {
 resource "google_bigquery_dataset" "onepiece" {
   dataset_id = "onepiece"
   location   = "US"
+
+  labels = {
+    app = "onepiece"
+  }
 }
 
 resource "google_bigquery_table" "chapters" {
   dataset_id          = google_bigquery_dataset.onepiece.dataset_id
   table_id            = "chapters"
   deletion_protection = false
+
+  labels = {
+    app = "onepiece"
+  }
 
   schema = jsonencode([
     { name = "scraped_at",     type = "TIMESTAMP" },
@@ -43,6 +51,10 @@ resource "google_bigquery_table" "dialogues" {
   table_id            = "dialogues"
   deletion_protection = false
 
+  labels = {
+    app = "onepiece"
+  }
+
   schema = jsonencode([
     { name = "chapter_number",  type = "INTEGER"   },
     { name = "page_number",     type = "INTEGER"   },
@@ -57,6 +69,10 @@ resource "google_bigquery_table" "speakers" {
   dataset_id          = google_bigquery_dataset.onepiece.dataset_id
   table_id            = "speakers"
   deletion_protection = false
+
+  labels = {
+    app = "onepiece"
+  }
 
   schema = jsonencode([
     { name = "chapter_number", type = "INTEGER" },
@@ -76,6 +92,10 @@ resource "google_storage_bucket" "manga_images" {
   name          = "onepiece-manga-images-tlex"
   location      = var.region
   force_destroy = false
+
+  labels = {
+    app = "onepiece"
+  }
 }
 
 # ============================================================
@@ -116,6 +136,10 @@ resource "google_cloud_run_v2_job" "scraper" {
   name     = "onepiece-scraper-job"
   location = var.region
 
+  labels = {
+    app = "onepiece"
+  }
+
   template {
     template {
       # Service account dédié pour le scraper
@@ -147,6 +171,10 @@ resource "google_cloud_run_v2_job" "ocr" {
   name     = "ocr-pipeline-job"
   location = var.region
 
+  labels = {
+    app = "onepiece"
+  }
+
   template {
     template {
       # Service account dédié pour l'OCR
@@ -173,6 +201,10 @@ resource "google_cloud_run_v2_job" "nlp" {
   name     = "nlp-pipeline-job"
   location = var.region
 
+  labels = {
+    app = "onepiece"
+  }
+
   template {
     template {
       # Service account dédié UNIQUEMENT pour le pipeline NLP
@@ -198,6 +230,10 @@ resource "google_cloud_run_v2_job" "nlp" {
 resource "google_cloud_run_v2_service" "dashboard" {
   name     = "onepiece-dashboard"
   location = var.region
+
+  labels = {
+    app = "onepiece"
+  }
 
   template {
     # Service account LECTURE SEULE pour le dashboard
