@@ -20,7 +20,7 @@ provider "google" {
 
 resource "google_bigquery_dataset" "onepiece" {
   dataset_id = "onepiece"
-  location   = "US"
+  location   = "EU"
 
   labels = {
     app = "onepiece"
