@@ -1,4 +1,6 @@
 import json
+import os
+import tempfile
 import time
 
 import anthropic
@@ -189,20 +191,40 @@ def main():
 
         time.sleep(0.3)
 
-        if len(rows) >= 50:
-            errors = bq_client.insert_rows_json(SPEAKERS_TABLE, rows)
-            if errors:
-                print(f"  ❌ Erreur BigQuery : {errors}")
-            else:
-                print(f"  ✅ {len(rows)} lignes chargées")
-            rows = []
-
+    # Charger toutes les lignes en batch avec un load job (gratuit et optimisé pour batch)
     if rows:
-        errors = bq_client.insert_rows_json(SPEAKERS_TABLE, rows)
-        if errors:
-            print(f"  ❌ Erreur BigQuery : {errors}")
-        else:
-            print(f"  ✅ {len(rows)} lignes chargées")
+        print(f"\n📦 Chargement de {len(rows)} lignes via load job...")
+
+        # Écrire les données dans un fichier temporaire (newline-delimited JSON)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            for row in rows:
+                f.write(json.dumps(row) + '\n')
+            temp_file = f.name
+
+        try:
+            # Configurer le load job
+            job_config = bigquery.LoadJobConfig(
+                source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
+                write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
+            )
+
+            # Charger depuis le fichier temporaire
+            with open(temp_file, 'rb') as source_file:
+                job = bq_client.load_table_from_file(
+                    source_file,
+                    SPEAKERS_TABLE,
+                    job_config=job_config
+                )
+
+            # Attendre que le job se termine
+            job.result()
+            print(f"  ✅ {len(rows)} lignes chargées avec succès")
+
+        except Exception as e:
+            print(f"  ❌ Erreur lors du chargement : {e}")
+        finally:
+            # Nettoyer le fichier temporaire
+            os.unlink(temp_file)
 
     print("\n🏴‍☠️  NLP Pipeline terminé !")
 
