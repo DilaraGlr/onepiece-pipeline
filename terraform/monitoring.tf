@@ -79,6 +79,45 @@ resource "google_monitoring_alert_policy" "cloud_run_job_failure" {
 }
 
 # ============================================================
+# LOG-BASED METRIC - CLOUD RUN JOB ERRORS
+# ============================================================
+# Métrique custom qui compte les logs d'erreur (severity >= ERROR)
+# provenant des Cloud Run jobs
+
+resource "google_logging_metric" "cloud_run_job_errors" {
+  name   = "cloud_run_job_errors"
+  filter = <<-EOT
+    resource.type="cloud_run_job"
+    severity>=ERROR
+  EOT
+
+  metric_descriptor {
+    metric_kind = "DELTA"
+    value_type  = "INT64"
+    unit        = "1"
+
+    labels {
+      key         = "job_name"
+      value_type  = "STRING"
+      description = "Nom du Cloud Run job"
+    }
+
+    labels {
+      key         = "severity"
+      value_type  = "STRING"
+      description = "Niveau de sévérité du log"
+    }
+
+    display_name = "Cloud Run Job Errors"
+  }
+
+  label_extractors = {
+    "job_name" = "EXTRACT(resource.labels.job_name)"
+    "severity" = "EXTRACT(severity)"
+  }
+}
+
+# ============================================================
 # OUTPUTS
 # ============================================================
 
@@ -90,4 +129,9 @@ output "notification_channel_email" {
 output "alert_policy_job_failure" {
   description = "ID de la policy d'alerte pour les échecs de jobs"
   value       = google_monitoring_alert_policy.cloud_run_job_failure.id
+}
+
+output "log_metric_job_errors" {
+  description = "Nom de la métrique log-based pour les erreurs de jobs"
+  value       = google_logging_metric.cloud_run_job_errors.name
 }
