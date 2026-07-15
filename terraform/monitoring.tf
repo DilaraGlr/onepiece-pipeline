@@ -21,10 +21,73 @@ resource "google_monitoring_notification_channel" "email" {
 }
 
 # ============================================================
+# ALERTING POLICY - CLOUD RUN JOB FAILURES
+# ============================================================
+# Alerte déclenchée quand une exécution de Cloud Run job échoue
+# Surveille les jobs : scraper, ocr, nlp
+
+resource "google_monitoring_alert_policy" "cloud_run_job_failure" {
+  display_name = "Cloud Run Job Failure"
+  combiner     = "OR"
+  enabled      = true
+
+  conditions {
+    display_name = "Cloud Run Job execution failed"
+
+    condition_threshold {
+      filter          = "resource.type=\"cloud_run_job\" AND metric.type=\"run.googleapis.com/job/completed_execution_count\" AND metric.labels.result=\"failed\""
+      duration        = "0s"
+      comparison      = "COMPARISON_GT"
+      threshold_value = 0
+
+      aggregations {
+        alignment_period   = "60s"
+        per_series_aligner = "ALIGN_RATE"
+      }
+    }
+  }
+
+  notification_channels = [
+    google_monitoring_notification_channel.email.id
+  ]
+
+  alert_strategy {
+    auto_close = "86400s" # Ferme automatiquement après 24h
+  }
+
+  documentation {
+    content = <<-EOT
+    ## Cloud Run Job Failure Alert
+
+    Une exécution de Cloud Run job a échoué.
+
+    **Jobs surveillés:**
+    - onepiece-scraper-job
+    - ocr-pipeline-job
+    - nlp-pipeline-job
+
+    **Actions à prendre:**
+    1. Vérifier les logs du job dans Cloud Logging
+    2. Identifier la cause de l'échec (erreur API, timeout, permissions, etc.)
+    3. Corriger le problème et relancer manuellement si nécessaire
+
+    **Liens utiles:**
+    - [Cloud Run Jobs Console](https://console.cloud.google.com/run/jobs?project=t-lexicon-231513)
+    - [Cloud Logging](https://console.cloud.google.com/logs?project=t-lexicon-231513)
+    EOT
+  }
+}
+
+# ============================================================
 # OUTPUTS
 # ============================================================
 
 output "notification_channel_email" {
   description = "ID du canal de notification email"
   value       = google_monitoring_notification_channel.email.id
+}
+
+output "alert_policy_job_failure" {
+  description = "ID de la policy d'alerte pour les échecs de jobs"
+  value       = google_monitoring_alert_policy.cloud_run_job_failure.id
 }
