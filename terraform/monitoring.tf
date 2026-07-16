@@ -579,6 +579,293 @@ resource "google_monitoring_dashboard" "pipeline" {
 }
 
 # ============================================================
+# MONITORING DASHBOARD - RÉSUMÉ HEBDOMADAIRE
+# ============================================================
+# Dashboard hebdomadaire pour suivre la santé des exécutions
+
+resource "google_monitoring_dashboard" "weekly_summary" {
+  dashboard_json = jsonencode({
+    displayName = "One Piece - Santé du Run Hebdo"
+
+    mosaicLayout = {
+      columns = 12
+
+      tiles = [
+        # ========================================
+        # WIDGET 1: Scorecard - Scraper Job Status
+        # ========================================
+        {
+          width  = 4
+          height = 3
+          xPos   = 0
+          yPos   = 0
+
+          widget = {
+            title = "Scraper Job - Exécutions (7j)"
+            scorecard = {
+              timeSeriesQuery = {
+                timeSeriesFilter = {
+                  filter = "resource.type=\"cloud_run_job\" AND resource.label.job_name=\"onepiece-scraper-job\" AND metric.type=\"run.googleapis.com/job/completed_execution_count\""
+                  aggregation = {
+                    alignmentPeriod    = "604800s"
+                    perSeriesAligner   = "ALIGN_SUM"
+                    crossSeriesReducer = "REDUCE_SUM"
+                    groupByFields      = ["metric.label.result"]
+                  }
+                }
+              }
+              sparkChartView = {
+                sparkChartType = "SPARK_BAR"
+              }
+            }
+          }
+        },
+
+        # ========================================
+        # WIDGET 2: Scorecard - OCR Job Status
+        # ========================================
+        {
+          width  = 4
+          height = 3
+          xPos   = 4
+          yPos   = 0
+
+          widget = {
+            title = "OCR Job - Exécutions (7j)"
+            scorecard = {
+              timeSeriesQuery = {
+                timeSeriesFilter = {
+                  filter = "resource.type=\"cloud_run_job\" AND resource.label.job_name=\"ocr-pipeline-job\" AND metric.type=\"run.googleapis.com/job/completed_execution_count\""
+                  aggregation = {
+                    alignmentPeriod    = "604800s"
+                    perSeriesAligner   = "ALIGN_SUM"
+                    crossSeriesReducer = "REDUCE_SUM"
+                    groupByFields      = ["metric.label.result"]
+                  }
+                }
+              }
+              sparkChartView = {
+                sparkChartType = "SPARK_BAR"
+              }
+            }
+          }
+        },
+
+        # ========================================
+        # WIDGET 3: Scorecard - NLP Job Status
+        # ========================================
+        {
+          width  = 4
+          height = 3
+          xPos   = 8
+          yPos   = 0
+
+          widget = {
+            title = "NLP Job - Exécutions (7j)"
+            scorecard = {
+              timeSeriesQuery = {
+                timeSeriesFilter = {
+                  filter = "resource.type=\"cloud_run_job\" AND resource.label.job_name=\"nlp-pipeline-job\" AND metric.type=\"run.googleapis.com/job/completed_execution_count\""
+                  aggregation = {
+                    alignmentPeriod    = "604800s"
+                    perSeriesAligner   = "ALIGN_SUM"
+                    crossSeriesReducer = "REDUCE_SUM"
+                    groupByFields      = ["metric.label.result"]
+                  }
+                }
+              }
+              sparkChartView = {
+                sparkChartType = "SPARK_BAR"
+              }
+            }
+          }
+        },
+
+        # ========================================
+        # WIDGET 4: Durée d'exécution par job (7j)
+        # ========================================
+        {
+          width  = 12
+          height = 4
+          xPos   = 0
+          yPos   = 3
+
+          widget = {
+            title = "Durée moyenne d'exécution par job (7 derniers jours)"
+            xyChart = {
+              dataSets = [
+                {
+                  timeSeriesQuery = {
+                    timeSeriesFilter = {
+                      filter = "resource.type=\"cloud_run_job\" AND metric.type=\"run.googleapis.com/job/execution_time\""
+                      aggregation = {
+                        alignmentPeriod    = "3600s"
+                        perSeriesAligner   = "ALIGN_MEAN"
+                        crossSeriesReducer = "REDUCE_MEAN"
+                        groupByFields      = ["resource.label.job_name"]
+                      }
+                    }
+                  }
+                  plotType = "LINE"
+                  targetAxis = "Y1"
+                }
+              ]
+              timeshiftDuration = "0s"
+              yAxis = {
+                label = "Durée (secondes)"
+                scale = "LINEAR"
+              }
+            }
+          }
+        },
+
+        # ========================================
+        # WIDGET 5: Scorecard - Erreurs OCR
+        # ========================================
+        {
+          width  = 6
+          height = 3
+          xPos   = 0
+          yPos   = 7
+
+          widget = {
+            title = "Erreurs OCR Job (7j)"
+            scorecard = {
+              timeSeriesQuery = {
+                timeSeriesFilter = {
+                  filter = "metric.type=\"logging.googleapis.com/user/cloud_run_job_errors\" AND metric.label.job_name=\"ocr-pipeline-job\""
+                  aggregation = {
+                    alignmentPeriod    = "604800s"
+                    perSeriesAligner   = "ALIGN_SUM"
+                    crossSeriesReducer = "REDUCE_SUM"
+                  }
+                }
+              }
+              sparkChartView = {
+                sparkChartType = "SPARK_LINE"
+              }
+            }
+          }
+        },
+
+        # ========================================
+        # WIDGET 6: Scorecard - Mentions "roi des pirates"
+        # ========================================
+        {
+          width  = 6
+          height = 3
+          xPos   = 6
+          yPos   = 7
+
+          widget = {
+            title = "Mentions 'roi des pirates' (7j)"
+            scorecard = {
+              timeSeriesQuery = {
+                timeSeriesFilter = {
+                  filter = "metric.type=\"logging.googleapis.com/user/roi_des_pirates_mentions\""
+                  aggregation = {
+                    alignmentPeriod    = "604800s"
+                    perSeriesAligner   = "ALIGN_SUM"
+                    crossSeriesReducer = "REDUCE_SUM"
+                  }
+                }
+              }
+              sparkChartView = {
+                sparkChartType = "SPARK_LINE"
+              }
+            }
+          }
+        },
+
+        # ========================================
+        # WIDGET 7: Succès vs Échecs (dernière semaine)
+        # ========================================
+        {
+          width  = 12
+          height = 4
+          xPos   = 0
+          yPos   = 10
+
+          widget = {
+            title = "Exécutions: Succès vs Échecs (7 derniers jours)"
+            xyChart = {
+              dataSets = [
+                {
+                  timeSeriesQuery = {
+                    timeSeriesFilter = {
+                      filter = "resource.type=\"cloud_run_job\" AND metric.type=\"run.googleapis.com/job/completed_execution_count\" AND metric.label.result=\"succeeded\""
+                      aggregation = {
+                        alignmentPeriod    = "3600s"
+                        perSeriesAligner   = "ALIGN_SUM"
+                        crossSeriesReducer = "REDUCE_SUM"
+                        groupByFields      = ["resource.label.job_name"]
+                      }
+                    }
+                  }
+                  plotType = "STACKED_AREA"
+                  targetAxis = "Y1"
+                  legendTemplate = "$${resource.labels.job_name} - Succès"
+                },
+                {
+                  timeSeriesQuery = {
+                    timeSeriesFilter = {
+                      filter = "resource.type=\"cloud_run_job\" AND metric.type=\"run.googleapis.com/job/completed_execution_count\" AND metric.label.result=\"failed\""
+                      aggregation = {
+                        alignmentPeriod    = "3600s"
+                        perSeriesAligner   = "ALIGN_SUM"
+                        crossSeriesReducer = "REDUCE_SUM"
+                        groupByFields      = ["resource.label.job_name"]
+                      }
+                    }
+                  }
+                  plotType = "STACKED_AREA"
+                  targetAxis = "Y1"
+                  legendTemplate = "$${resource.labels.job_name} - Échecs"
+                }
+              ]
+              timeshiftDuration = "0s"
+              yAxis = {
+                label = "Nombre d'exécutions"
+                scale = "LINEAR"
+              }
+            }
+          }
+        },
+
+        # ========================================
+        # WIDGET 8: Taux de succès global
+        # ========================================
+        {
+          width  = 12
+          height = 3
+          xPos   = 0
+          yPos   = 14
+
+          widget = {
+            title = "Taux de succès global (7j)"
+            scorecard = {
+              timeSeriesQuery = {
+                timeSeriesFilter = {
+                  filter = "resource.type=\"cloud_run_job\" AND metric.type=\"run.googleapis.com/job/completed_execution_count\" AND metric.label.result=\"succeeded\""
+                  aggregation = {
+                    alignmentPeriod    = "604800s"
+                    perSeriesAligner   = "ALIGN_SUM"
+                    crossSeriesReducer = "REDUCE_SUM"
+                  }
+                }
+              }
+              sparkChartView = {
+                sparkChartType = "SPARK_LINE"
+              }
+            }
+          }
+        }
+      ]
+    }
+  })
+}
+
+# ============================================================
 # OUTPUTS
 # ============================================================
 
@@ -620,4 +907,9 @@ output "log_sink_cloud_run_jobs" {
 output "monitoring_dashboard" {
   description = "ID du dashboard de monitoring du pipeline"
   value       = google_monitoring_dashboard.pipeline.id
+}
+
+output "monitoring_dashboard_weekly" {
+  description = "ID du dashboard de résumé hebdomadaire"
+  value       = google_monitoring_dashboard.weekly_summary.id
 }
