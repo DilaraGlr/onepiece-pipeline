@@ -118,6 +118,39 @@ resource "google_logging_metric" "cloud_run_job_errors" {
 }
 
 # ============================================================
+# LOG SINK - CLOUD RUN JOBS TO BIGQUERY
+# ============================================================
+# Exporte tous les logs des Cloud Run jobs vers BigQuery
+# pour analyse et archivage à long terme
+
+resource "google_logging_project_sink" "cloud_run_jobs_to_bigquery" {
+  name        = "cloud-run-jobs-to-bigquery"
+  destination = "bigquery.googleapis.com/projects/${var.project_id}/datasets/${google_bigquery_dataset.pipeline_logs.dataset_id}"
+
+  # Filtre pour capturer tous les logs des Cloud Run jobs
+  filter = <<-EOT
+    resource.type="cloud_run_job"
+    (resource.labels.job_name="onepiece-scraper-job" OR
+     resource.labels.job_name="ocr-pipeline-job" OR
+     resource.labels.job_name="nlp-pipeline-job")
+  EOT
+
+  # Utilise l'ID unique du service writer pour les permissions
+  unique_writer_identity = true
+
+  bigquery_options {
+    use_partitioned_tables = true
+  }
+}
+
+# Permissions pour que le sink puisse écrire dans BigQuery
+resource "google_bigquery_dataset_iam_member" "pipeline_logs_writer" {
+  dataset_id = google_bigquery_dataset.pipeline_logs.dataset_id
+  role       = "roles/bigquery.dataEditor"
+  member     = google_logging_project_sink.cloud_run_jobs_to_bigquery.writer_identity
+}
+
+# ============================================================
 # UPTIME CHECK - DASHBOARD
 # ============================================================
 # Vérifie la disponibilité du dashboard toutes les minutes
@@ -229,4 +262,9 @@ output "uptime_check_dashboard" {
 output "alert_policy_dashboard_downtime" {
   description = "ID de la policy d'alerte pour l'indisponibilité du dashboard"
   value       = google_monitoring_alert_policy.dashboard_downtime.id
+}
+
+output "log_sink_cloud_run_jobs" {
+  description = "Nom du log sink pour exporter les logs des Cloud Run jobs vers BigQuery"
+  value       = google_logging_project_sink.cloud_run_jobs_to_bigquery.name
 }

@@ -2,6 +2,11 @@ output "bigquery_dataset" {
   value = google_bigquery_dataset.onepiece.dataset_id
 }
 
+output "bigquery_dataset_pipeline_logs" {
+  value       = google_bigquery_dataset.pipeline_logs.dataset_id
+  description = "Dataset BigQuery pour stocker les logs des Cloud Run jobs"
+}
+
 output "bigquery_table_chapters" {
   value = google_bigquery_table.chapters.table_id
 }

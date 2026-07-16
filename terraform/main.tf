@@ -27,6 +27,17 @@ resource "google_bigquery_dataset" "onepiece" {
   }
 }
 
+resource "google_bigquery_dataset" "pipeline_logs" {
+  dataset_id = "pipeline_logs"
+  location   = "EU"
+
+  labels = {
+    app = "onepiece"
+  }
+
+  description = "Dataset pour stocker les logs des Cloud Run jobs du pipeline"
+}
+
 resource "google_bigquery_table" "chapters" {
   dataset_id          = google_bigquery_dataset.onepiece.dataset_id
   table_id            = "chapters"
