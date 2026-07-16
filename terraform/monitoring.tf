@@ -118,6 +118,39 @@ resource "google_logging_metric" "cloud_run_job_errors" {
 }
 
 # ============================================================
+# LOG-BASED METRIC - ROI DES PIRATES MENTIONS
+# ============================================================
+# Métrique custom qui compte les mentions "roi des pirates"
+# dans les logs du job NLP
+
+resource "google_logging_metric" "roi_des_pirates_mentions" {
+  name   = "roi_des_pirates_mentions"
+  filter = <<-EOT
+    resource.type="cloud_run_job"
+    resource.labels.job_name="nlp-pipeline-job"
+    (textPayload=~"roi des pirates" OR jsonPayload.message=~"roi des pirates")
+  EOT
+
+  metric_descriptor {
+    metric_kind = "DELTA"
+    value_type  = "INT64"
+    unit        = "1"
+
+    labels {
+      key         = "chapter_number"
+      value_type  = "STRING"
+      description = "Numéro du chapitre traité"
+    }
+
+    display_name = "Mentions Roi des Pirates"
+  }
+
+  label_extractors = {
+    "chapter_number" = "EXTRACT(jsonPayload.chapter_number)"
+  }
+}
+
+# ============================================================
 # LOG SINK - CLOUD RUN JOBS TO BIGQUERY
 # ============================================================
 # Exporte tous les logs des Cloud Run jobs vers BigQuery
@@ -501,6 +534,44 @@ resource "google_monitoring_dashboard" "pipeline" {
               }
             }
           }
+        },
+
+        # ========================================
+        # WIDGET 8: Mentions "roi des pirates"
+        # ========================================
+        {
+          width  = 12
+          height = 4
+          xPos   = 0
+          yPos   = 17
+
+          widget = {
+            title = "Mentions 'roi des pirates' détectées par le NLP"
+            xyChart = {
+              dataSets = [
+                {
+                  timeSeriesQuery = {
+                    timeSeriesFilter = {
+                      filter = "metric.type=\"logging.googleapis.com/user/roi_des_pirates_mentions\""
+                      aggregation = {
+                        alignmentPeriod    = "60s"
+                        perSeriesAligner   = "ALIGN_RATE"
+                        crossSeriesReducer = "REDUCE_SUM"
+                        groupByFields      = ["metric.label.chapter_number"]
+                      }
+                    }
+                  }
+                  plotType = "LINE"
+                  targetAxis = "Y1"
+                }
+              ]
+              timeshiftDuration = "0s"
+              yAxis = {
+                label = "Mentions/sec"
+                scale = "LINEAR"
+              }
+            }
+          }
         }
       ]
     }
@@ -524,6 +595,11 @@ output "alert_policy_job_failure" {
 output "log_metric_job_errors" {
   description = "Nom de la métrique log-based pour les erreurs de jobs"
   value       = google_logging_metric.cloud_run_job_errors.name
+}
+
+output "log_metric_roi_des_pirates" {
+  description = "Nom de la métrique log-based pour les mentions 'roi des pirates'"
+  value       = google_logging_metric.roi_des_pirates_mentions.name
 }
 
 output "uptime_check_dashboard" {
