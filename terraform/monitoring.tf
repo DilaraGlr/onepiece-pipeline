@@ -236,6 +236,278 @@ resource "google_monitoring_alert_policy" "dashboard_downtime" {
 }
 
 # ============================================================
+# MONITORING DASHBOARD
+# ============================================================
+# Dashboard centralisé pour visualiser l'état du pipeline One Piece
+
+resource "google_monitoring_dashboard" "pipeline" {
+  dashboard_json = jsonencode({
+    displayName = "One Piece Pipeline Dashboard"
+
+    mosaicLayout = {
+      columns = 12
+
+      tiles = [
+        # ========================================
+        # WIDGET 1: Exécutions des jobs (succès)
+        # ========================================
+        {
+          width  = 6
+          height = 4
+          xPos   = 0
+          yPos   = 0
+
+          widget = {
+            title = "Exécutions de jobs - Succès"
+            xyChart = {
+              dataSets = [
+                {
+                  timeSeriesQuery = {
+                    timeSeriesFilter = {
+                      filter = "resource.type=\"cloud_run_job\" AND metric.type=\"run.googleapis.com/job/completed_execution_count\" AND metric.label.result=\"succeeded\""
+                      aggregation = {
+                        alignmentPeriod    = "60s"
+                        perSeriesAligner   = "ALIGN_RATE"
+                        crossSeriesReducer = "REDUCE_SUM"
+                        groupByFields      = ["resource.label.job_name"]
+                      }
+                    }
+                  }
+                  plotType = "LINE"
+                  targetAxis = "Y1"
+                }
+              ]
+              timeshiftDuration = "0s"
+              yAxis = {
+                label = "Exécutions/sec"
+                scale = "LINEAR"
+              }
+            }
+          }
+        },
+
+        # ========================================
+        # WIDGET 2: Exécutions des jobs (échecs)
+        # ========================================
+        {
+          width  = 6
+          height = 4
+          xPos   = 6
+          yPos   = 0
+
+          widget = {
+            title = "Exécutions de jobs - Échecs"
+            xyChart = {
+              dataSets = [
+                {
+                  timeSeriesQuery = {
+                    timeSeriesFilter = {
+                      filter = "resource.type=\"cloud_run_job\" AND metric.type=\"run.googleapis.com/job/completed_execution_count\" AND metric.label.result=\"failed\""
+                      aggregation = {
+                        alignmentPeriod    = "60s"
+                        perSeriesAligner   = "ALIGN_RATE"
+                        crossSeriesReducer = "REDUCE_SUM"
+                        groupByFields      = ["resource.label.job_name"]
+                      }
+                    }
+                  }
+                  plotType = "LINE"
+                  targetAxis = "Y1"
+                }
+              ]
+              timeshiftDuration = "0s"
+              yAxis = {
+                label = "Échecs/sec"
+                scale = "LINEAR"
+              }
+            }
+          }
+        },
+
+        # ========================================
+        # WIDGET 3: Log-based metric - Erreurs par job
+        # ========================================
+        {
+          width  = 12
+          height = 4
+          xPos   = 0
+          yPos   = 4
+
+          widget = {
+            title = "Logs d'erreur par job (severity >= ERROR)"
+            xyChart = {
+              dataSets = [
+                {
+                  timeSeriesQuery = {
+                    timeSeriesFilter = {
+                      filter = "metric.type=\"logging.googleapis.com/user/cloud_run_job_errors\""
+                      aggregation = {
+                        alignmentPeriod    = "60s"
+                        perSeriesAligner   = "ALIGN_RATE"
+                        crossSeriesReducer = "REDUCE_SUM"
+                        groupByFields      = ["metric.label.job_name", "metric.label.severity"]
+                      }
+                    }
+                  }
+                  plotType = "LINE"
+                  targetAxis = "Y1"
+                }
+              ]
+              timeshiftDuration = "0s"
+              yAxis = {
+                label = "Erreurs/sec"
+                scale = "LINEAR"
+              }
+            }
+          }
+        },
+
+        # ========================================
+        # WIDGET 4: Uptime check du dashboard
+        # ========================================
+        {
+          width  = 12
+          height = 3
+          xPos   = 0
+          yPos   = 8
+
+          widget = {
+            title = "Dashboard Uptime Check"
+            xyChart = {
+              dataSets = [
+                {
+                  timeSeriesQuery = {
+                    timeSeriesFilter = {
+                      filter = "resource.type=\"uptime_url\" AND metric.type=\"monitoring.googleapis.com/uptime_check/check_passed\" AND resource.label.host=\"onepiece-dashboard-37i2wtwxfa-ew.a.run.app\""
+                      aggregation = {
+                        alignmentPeriod    = "60s"
+                        perSeriesAligner   = "ALIGN_FRACTION_TRUE"
+                        crossSeriesReducer = "REDUCE_MEAN"
+                      }
+                    }
+                  }
+                  plotType = "LINE"
+                  targetAxis = "Y1"
+                }
+              ]
+              timeshiftDuration = "0s"
+              yAxis = {
+                label = "Disponibilité (%)"
+                scale = "LINEAR"
+              }
+              thresholds = [
+                {
+                  value = 0.95
+                },
+                {
+                  value = 0.99
+                }
+              ]
+            }
+          }
+        },
+
+        # ========================================
+        # WIDGET 5: Scorecard - Total exécutions
+        # ========================================
+        {
+          width  = 6
+          height = 2
+          xPos   = 0
+          yPos   = 11
+
+          widget = {
+            title = "Total exécutions (24h)"
+            scorecard = {
+              timeSeriesQuery = {
+                timeSeriesFilter = {
+                  filter = "resource.type=\"cloud_run_job\" AND metric.type=\"run.googleapis.com/job/completed_execution_count\""
+                  aggregation = {
+                    alignmentPeriod    = "86400s"
+                    perSeriesAligner   = "ALIGN_SUM"
+                    crossSeriesReducer = "REDUCE_SUM"
+                  }
+                }
+              }
+              sparkChartView = {
+                sparkChartType = "SPARK_LINE"
+              }
+            }
+          }
+        },
+
+        # ========================================
+        # WIDGET 6: Scorecard - Taux de succès
+        # ========================================
+        {
+          width  = 6
+          height = 2
+          xPos   = 6
+          yPos   = 11
+
+          widget = {
+            title = "Taux succès (24h)"
+            scorecard = {
+              timeSeriesQuery = {
+                timeSeriesFilter = {
+                  filter = "resource.type=\"cloud_run_job\" AND metric.type=\"run.googleapis.com/job/completed_execution_count\" AND metric.label.result=\"succeeded\""
+                  aggregation = {
+                    alignmentPeriod    = "86400s"
+                    perSeriesAligner   = "ALIGN_SUM"
+                    crossSeriesReducer = "REDUCE_SUM"
+                  }
+                }
+              }
+              sparkChartView = {
+                sparkChartType = "SPARK_LINE"
+              }
+            }
+          }
+        },
+
+        # ========================================
+        # WIDGET 7: Durée d'exécution des jobs
+        # ========================================
+        {
+          width  = 12
+          height = 4
+          xPos   = 0
+          yPos   = 13
+
+          widget = {
+            title = "Durée d'exécution des jobs"
+            xyChart = {
+              dataSets = [
+                {
+                  timeSeriesQuery = {
+                    timeSeriesFilter = {
+                      filter = "resource.type=\"cloud_run_job\" AND metric.type=\"run.googleapis.com/job/execution_time\""
+                      aggregation = {
+                        alignmentPeriod    = "60s"
+                        perSeriesAligner   = "ALIGN_MEAN"
+                        crossSeriesReducer = "REDUCE_MEAN"
+                        groupByFields      = ["resource.label.job_name"]
+                      }
+                    }
+                  }
+                  plotType = "LINE"
+                  targetAxis = "Y1"
+                }
+              ]
+              timeshiftDuration = "0s"
+              yAxis = {
+                label = "Durée (secondes)"
+                scale = "LINEAR"
+              }
+            }
+          }
+        }
+      ]
+    }
+  })
+}
+
+# ============================================================
 # OUTPUTS
 # ============================================================
 
@@ -267,4 +539,9 @@ output "alert_policy_dashboard_downtime" {
 output "log_sink_cloud_run_jobs" {
   description = "Nom du log sink pour exporter les logs des Cloud Run jobs vers BigQuery"
   value       = google_logging_project_sink.cloud_run_jobs_to_bigquery.name
+}
+
+output "monitoring_dashboard" {
+  description = "ID du dashboard de monitoring du pipeline"
+  value       = google_monitoring_dashboard.pipeline.id
 }
