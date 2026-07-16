@@ -118,6 +118,91 @@ resource "google_logging_metric" "cloud_run_job_errors" {
 }
 
 # ============================================================
+# UPTIME CHECK - DASHBOARD
+# ============================================================
+# Vérifie la disponibilité du dashboard toutes les minutes
+# Timeout de 10 secondes par vérification
+
+resource "google_monitoring_uptime_check_config" "dashboard" {
+  display_name = "Dashboard Uptime Check"
+  timeout      = "10s"
+  period       = "60s"
+
+  http_check {
+    path         = "/"
+    port         = 443
+    use_ssl      = true
+    validate_ssl = true
+  }
+
+  monitored_resource {
+    type = "uptime_url"
+    labels = {
+      project_id = var.project_id
+      host       = "onepiece-dashboard-37i2wtwxfa-ew.a.run.app"
+    }
+  }
+}
+
+# ============================================================
+# ALERTING POLICY - DASHBOARD DOWNTIME
+# ============================================================
+# Alerte déclenchée si le dashboard est indisponible plus de 5 minutes
+
+resource "google_monitoring_alert_policy" "dashboard_downtime" {
+  display_name = "Dashboard Downtime Alert"
+  combiner     = "OR"
+  enabled      = true
+
+  conditions {
+    display_name = "Dashboard indisponible"
+
+    condition_threshold {
+      filter          = "resource.type=\"uptime_url\" AND metric.type=\"monitoring.googleapis.com/uptime_check/check_passed\" AND resource.labels.host=\"onepiece-dashboard-37i2wtwxfa-ew.a.run.app\""
+      duration        = "300s"
+      comparison      = "COMPARISON_LT"
+      threshold_value = 1
+
+      aggregations {
+        alignment_period     = "60s"
+        per_series_aligner   = "ALIGN_NEXT_OLDER"
+        cross_series_reducer = "REDUCE_COUNT_FALSE"
+        group_by_fields      = ["resource.label.host"]
+      }
+    }
+  }
+
+  notification_channels = [
+    google_monitoring_notification_channel.email.id
+  ]
+
+  alert_strategy {
+    auto_close = "86400s"
+  }
+
+  documentation {
+    content = <<-EOT
+    ## Dashboard Downtime Alert
+
+    Le dashboard One Piece est indisponible depuis plus de 5 minutes.
+
+    **URL:** https://onepiece-dashboard-37i2wtwxfa-ew.a.run.app
+
+    **Actions à prendre:**
+    1. Vérifier les logs du service Cloud Run
+    2. Vérifier que le service est bien déployé et qu'il a des instances running
+    3. Tester manuellement l'URL dans un navigateur
+    4. Vérifier les quotas et limites du projet
+
+    **Liens utiles:**
+    - [Cloud Run Dashboard Console](https://console.cloud.google.com/run/detail/europe-west1/onepiece-dashboard?project=t-lexicon-231513)
+    - [Cloud Logging](https://console.cloud.google.com/logs?project=t-lexicon-231513)
+    - [Uptime Checks](https://console.cloud.google.com/monitoring/uptime?project=t-lexicon-231513)
+    EOT
+  }
+}
+
+# ============================================================
 # OUTPUTS
 # ============================================================
 
@@ -134,4 +219,14 @@ output "alert_policy_job_failure" {
 output "log_metric_job_errors" {
   description = "Nom de la métrique log-based pour les erreurs de jobs"
   value       = google_logging_metric.cloud_run_job_errors.name
+}
+
+output "uptime_check_dashboard" {
+  description = "ID de l'uptime check pour le dashboard"
+  value       = google_monitoring_uptime_check_config.dashboard.id
+}
+
+output "alert_policy_dashboard_downtime" {
+  description = "ID de la policy d'alerte pour l'indisponibilité du dashboard"
+  value       = google_monitoring_alert_policy.dashboard_downtime.id
 }
