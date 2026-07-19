@@ -306,12 +306,20 @@ resource "google_cloud_run_v2_service" "dashboard" {
   }
 }
 
-# Permettre l'accès public au dashboard
-resource "google_cloud_run_service_iam_member" "dashboard_public" {
+# Restreindre l'accès au dashboard à un utilisateur nominatif
+# ÉVOLUTION DE LA SÉCURITÉ :
+# - allUsers (accès public anonyme) → REJETÉ : trop ouvert, n'importe qui peut accéder
+# - allAuthenticatedUsers → REJETÉ : autorise n'importe quel compte Google au monde,
+#   pas seulement les comptes autorisés du projet
+# - user:EMAIL (accès nominatif) → CHOISI : seul cet utilisateur spécifique peut invoquer
+#   le service Cloud Run
+# ALTERNATIVE : Pour autoriser plusieurs personnes, utiliser group:team@example.com
+# (nécessite un Google Group configuré dans Google Workspace ou Cloud Identity)
+resource "google_cloud_run_service_iam_member" "dashboard_restricted" {
   location = google_cloud_run_v2_service.dashboard.location
   service  = google_cloud_run_v2_service.dashboard.name
   role     = "roles/run.invoker"
-  member   = "allUsers"
+  member   = "user:guler.dilara2000@gmail.com"
 }
 
 # ============================================================
