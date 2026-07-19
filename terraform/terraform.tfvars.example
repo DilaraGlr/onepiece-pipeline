@@ -1,31 +1,25 @@
 # ============================================================
-# CONFIGURATION DES VARIABLES TERRAFORM
+# TERRAFORM VARIABLES - EXEMPLE
 # ============================================================
-# Copiez ce fichier vers terraform.tfvars et remplissez vos valeurs
-# cp terraform.tfvars.example terraform.tfvars
-
-# Configuration du projet
-project_id     = "onepiece-pipeline"
-project_number = "682150386282"
-region         = "europe-west1"
-
-# Configuration du scraper
-chapter_limit = "0"      # 0 = tous les chapitres
-image_tag     = "latest" # ou un hash Git spécifique
-
-# ============================================================
-# CONFIGURATION DU BUDGET (À COMPLÉTER)
+# Ce fichier montre le format attendu pour terraform.tfvars
+#
+# INSTRUCTIONS :
+# 1. Copiez ce fichier : cp terraform.tfvars.example terraform.tfvars
+# 2. Remplacez les valeurs d'exemple par vos vraies valeurs
+# 3. NE COMMITEZ JAMAIS terraform.tfvars dans Git (déjà dans .gitignore)
 # ============================================================
 
-# ID de votre compte de facturation Google Cloud
+# ID du compte de facturation Google Cloud
+# Format: XXXXXX-XXXXXX-XXXXXX
 # Trouvez-le via : gcloud billing accounts list
-# Ou sur : https://console.cloud.google.com/billing
+# Ou dans la console : https://console.cloud.google.com/billing
 billing_account_id = "XXXXXX-XXXXXX-XXXXXX"
 
-# Budget mensuel en EUR (ajustez selon vos besoins)
-# Exemples de coûts typiques pour ce projet :
-# - Cloud Run Jobs : ~5-10 EUR/mois
-# - BigQuery : ~2-5 EUR/mois
-# - APIs Gemini/Claude : Variable selon l'utilisation
-# - Cloud Storage : ~1-2 EUR/mois
-monthly_budget_amount = "50"
+# Montant du budget mensuel en EUR (ajustez selon vos besoins)
+# monthly_budget_amount = "50"
+
+# Tag Docker des images (optionnel, défaut: "latest")
+# image_tag = "latest"
+
+# Nombre de chapitres à scraper (optionnel, défaut: "3")
+# chapter_limit = "3"

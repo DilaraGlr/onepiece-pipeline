@@ -137,3 +137,28 @@ resource "google_project_iam_member" "dashboard_bq_job_user" {
   role    = "roles/bigquery.jobUser"  # MOINDRE PRIVILÈGE : peut uniquement lancer des requêtes
   member  = "serviceAccount:${google_service_account.dashboard.email}"
 }
+
+# ============================================================
+
+# 6. Service Account pour Budget Killer Function
+resource "google_service_account" "budget_killer" {
+  account_id   = "sa-budget-killer"
+  display_name = "Service Account for Budget Killer Function"
+  description  = "Detache la facturation quand le budget atteint 100%"
+}
+
+# Permission pour détacher la facturation du projet
+# MOINDRE PRIVILÈGE (Chapitre 2) :
+# - roles/billing.projectManager permet UNIQUEMENT de modifier le lien billing
+#   entre le projet et le compte de facturation (attach/detach)
+# - Ce rôle NE PERMET PAS de modifier les données du projet, créer des ressources,
+#   ou accéder aux données (contrairement à Owner/Editor qui sont trop larges)
+# - C'est le rôle MINIMAL nécessaire pour la fonction stop_billing() qui appelle
+#   cloudbilling.projects.updateBillingInfo avec billingAccountName=""
+# - Alternative rejetée: roles/owner ou roles/editor seraient des sur-privilèges
+#   dangereux pour une fonction automatisée
+resource "google_project_iam_member" "budget_killer_billing_manager" {
+  project = var.project_id
+  role    = "roles/billing.projectManager"
+  member  = "serviceAccount:${google_service_account.budget_killer.email}"
+}
