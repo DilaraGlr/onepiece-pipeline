@@ -31,10 +31,11 @@ variable "image_tag" {
 variable "billing_account_id" {
   description = "ID du compte de facturation Google Cloud (format: 012345-6789AB-CDEF01)"
   type        = string
-  default     = "0124A5-B2E6DE-610494"
-  # Trouvez votre Billing Account ID ici :
-  # https://console.cloud.google.com/billing
-  # Ou via CLI : gcloud billing accounts list
+  # Pas de default : cette valeur ne doit jamais être commitée dans Git
+  # Définissez-la dans terraform/terraform.tfvars (voir terraform.tfvars.example)
+  # Trouvez votre Billing Account ID :
+  # - Console: https://console.cloud.google.com/billing
+  # - CLI: gcloud billing accounts list
 }
 
 variable "monthly_budget_amount" {

@@ -52,3 +52,18 @@ output "deployed_image_tag" {
   value       = var.image_tag
   description = "Tag Docker déployé (hash Git ou 'latest')"
 }
+
+output "budget_topic" {
+  value       = google_pubsub_topic.budget_alerts.name
+  description = "Topic Pub/Sub pour les alertes de budget"
+}
+
+output "budget_name" {
+  value       = google_billing_budget.project_budget.display_name
+  description = "Nom du budget mensuel configuré"
+}
+
+output "budget_killer_function" {
+  value       = google_cloudfunctions2_function.budget_killer.name
+  description = "Cloud Function qui détache la facturation à 100% du budget"
+}

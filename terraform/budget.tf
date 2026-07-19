@@ -100,3 +100,86 @@ resource "google_billing_budget" "project_budget" {
 data "google_project" "current" {
   project_id = var.project_id
 }
+
+# ============================================================
+# CLOUD FUNCTION - BUDGET KILLER
+# ============================================================
+# Détache automatiquement la facturation quand le budget atteint 100%
+
+# Bucket GCS pour stocker les sources des Cloud Functions
+resource "google_storage_bucket" "functions_source" {
+  name          = "${var.project_id}-functions-source"
+  location      = var.region
+  force_destroy = true
+
+  labels = {
+    app = "onepiece"
+  }
+
+  uniform_bucket_level_access = true
+}
+
+# Archiver le code de la fonction
+data "archive_file" "budget_killer_source" {
+  type        = "zip"
+  source_dir  = "${path.module}/../functions/kill-billing"
+  output_path = "${path.module}/../functions/kill-billing.zip"
+}
+
+# Uploader le zip vers GCS
+resource "google_storage_bucket_object" "budget_killer_zip" {
+  name   = "kill-billing-${data.archive_file.budget_killer_source.output_md5}.zip"
+  bucket = google_storage_bucket.functions_source.name
+  source = data.archive_file.budget_killer_source.output_path
+}
+
+# Cloud Function 2e génération
+resource "google_cloudfunctions2_function" "budget_killer" {
+  name        = "budget-killer"
+  location    = var.region
+  description = "Detache la facturation du projet quand le budget atteint 100%"
+
+  build_config {
+    runtime     = "python312"
+    entry_point = "stop_billing"
+
+    source {
+      storage_source {
+        bucket = google_storage_bucket.functions_source.name
+        object = google_storage_bucket_object.budget_killer_zip.name
+      }
+    }
+  }
+
+  service_config {
+    max_instance_count = 1
+    available_memory   = "256M"
+    timeout_seconds    = 60
+
+    service_account_email = google_service_account.budget_killer.email
+
+    environment_variables = {
+      GCP_PROJECT = var.project_id
+    }
+  }
+
+  event_trigger {
+    trigger_region        = var.region
+    event_type            = "google.cloud.pubsub.topic.v1.messagePublished"
+    pubsub_topic          = google_pubsub_topic.budget_alerts.id
+    retry_policy          = "RETRY_POLICY_RETRY"
+    service_account_email = google_service_account.budget_killer.email
+  }
+
+  labels = {
+    app = "onepiece"
+  }
+}
+
+# Permission pour que Pub/Sub puisse invoquer la fonction
+resource "google_cloud_run_service_iam_member" "budget_killer_invoker" {
+  location = google_cloudfunctions2_function.budget_killer.location
+  service  = google_cloudfunctions2_function.budget_killer.name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${google_service_account.budget_killer.email}"
+}
