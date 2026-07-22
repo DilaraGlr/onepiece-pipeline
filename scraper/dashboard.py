@@ -481,7 +481,7 @@ def main():
         f"letter-spacing:5px; font-size:0.75rem; "
         f"font-family:Cinzel,serif; margin-top:-8px;'>"
         f"DATA PIPELINE &nbsp;•&nbsp; {total_chapitres} CHAPITRES "
-        f"&nbsp;•&nbsp; VF"
+        f"&nbsp;•&nbsp; VF &nbsp;•&nbsp; v2"
         f"</p>",
         unsafe_allow_html=True,
     )
