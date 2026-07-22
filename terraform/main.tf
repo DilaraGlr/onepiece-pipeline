@@ -112,6 +112,10 @@ resource "google_storage_bucket" "manga_images" {
     app = "onepiece"
   }
 
+  versioning {
+    enabled = true
+  }
+
   # Optimisation des coûts : transition automatique vers des classes de stockage moins chères
   lifecycle_rule {
     condition {

@@ -70,6 +70,12 @@ resource "google_service_account" "cloudbuild" {
 # - roles/storage.admin : gère GCS (buckets, objets, IAM)
 
 # Rôle 1/3 : Editor (gère Cloud Run, BigQuery, Workflows, Scheduler, Secrets, etc.)
+# Exception au principe de moindre privilège (chapitre 2) :
+# ce SA est utilisé uniquement par le pipeline Cloud Build automatisé
+# (jamais par un humain), pour build+push d'images et terraform apply.
+# Idéalement à resserrer vers roles/artifactregistry.writer,
+# roles/run.developer et roles/iam.serviceAccountUser, mais laissé
+# en Editor pour simplifier le CI/CD à ce stade.
 resource "google_project_iam_member" "cloudbuild_editor" {
   project = var.project_id
   role    = "roles/editor"
