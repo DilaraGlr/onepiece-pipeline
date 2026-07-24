@@ -127,6 +127,7 @@ steps:
         cd terraform
         terraform apply \
           -var="image_tag=${SHORT_SHA}" \
+          -var="billing_account_id=${_BILLING_ACCOUNT_ID}" \
           -auto-approve
     waitFor:
       - 'terraform-init'
