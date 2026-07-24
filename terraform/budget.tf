@@ -34,67 +34,74 @@ resource "google_pubsub_subscription" "budget_alerts_sub" {
   ack_deadline_seconds = 10
 }
 
+# ============================================================
+# COMMENTÉ : nécessite des droits sur le billing account externe
+# (celui de Karim). Le SA Cloud Build n'a pas ces droits et ne doit
+# pas les avoir (compte prêté, pas le nôtre).
+# Cette ressource doit être créée MANUELLEMENT en local par un compte
+# ayant les droits sur ce billing account.
+# ============================================================
 # Budget avec alertes à 50%, 90% et 100%
-resource "google_billing_budget" "project_budget" {
-  # Nom du compte de facturation Google Cloud
-  # À remplacer par votre Billing Account ID
-  # Trouvez-le dans : https://console.cloud.google.com/billing
-  billing_account = var.billing_account_id
-
-  display_name = "Budget mensuel OneP iece Pipeline"
-
-  # Configuration du budget
-  budget_filter {
-    # Appliqué uniquement à ce projet
-    projects = ["projects/${data.google_project.current.number}"]
-
-    # Filtrer sur tous les services (optionnel)
-    # services = ["services/..."]
-
-    # Options supplémentaires :
-    # - calendar_period = "MONTH" (par défaut)
-    # - credit_types_treatment = "INCLUDE_ALL_CREDITS" (inclut les crédits gratuits)
-  }
-
-  # Montant du budget mensuel
-  amount {
-    specified_amount {
-      currency_code = "EUR"  # ou "USD" selon votre compte
-      units         = var.monthly_budget_amount
-    }
-  }
-
-  # Alertes aux seuils définis
-  threshold_rules {
-    threshold_percent = 0.5  # 50% du budget
-    spend_basis       = "CURRENT_SPEND"
-  }
-
-  threshold_rules {
-    threshold_percent = 0.9  # 90% du budget
-    spend_basis       = "CURRENT_SPEND"
-  }
-
-  threshold_rules {
-    threshold_percent = 1.0  # 100% du budget
-    spend_basis       = "CURRENT_SPEND"
-  }
-
-  # Configuration des notifications
-  all_updates_rule {
-    # Pub/Sub topic pour recevoir les notifications
-    pubsub_topic = google_pubsub_topic.budget_alerts.id
-
-    # Schéma de notification (optionnel)
-    # schema_version = "1.0"
-
-    # Désactiver les notifications par email si vous utilisez Pub/Sub
-    disable_default_iam_recipients = false
-
-    # Emails supplémentaires à notifier (optionnel)
-    # monitoring_notification_channels = [...]
-  }
-}
+# resource "google_billing_budget" "project_budget" {
+#   # Nom du compte de facturation Google Cloud
+#   # À remplacer par votre Billing Account ID
+#   # Trouvez-le dans : https://console.cloud.google.com/billing
+#   billing_account = var.billing_account_id
+#
+#   display_name = "Budget mensuel OneP iece Pipeline"
+#
+#   # Configuration du budget
+#   budget_filter {
+#     # Appliqué uniquement à ce projet
+#     projects = ["projects/${data.google_project.current.number}"]
+#
+#     # Filtrer sur tous les services (optionnel)
+#     # services = ["services/..."]
+#
+#     # Options supplémentaires :
+#     # - calendar_period = "MONTH" (par défaut)
+#     # - credit_types_treatment = "INCLUDE_ALL_CREDITS" (inclut les crédits gratuits)
+#   }
+#
+#   # Montant du budget mensuel
+#   amount {
+#     specified_amount {
+#       currency_code = "EUR"  # ou "USD" selon votre compte
+#       units         = var.monthly_budget_amount
+#     }
+#   }
+#
+#   # Alertes aux seuils définis
+#   threshold_rules {
+#     threshold_percent = 0.5  # 50% du budget
+#     spend_basis       = "CURRENT_SPEND"
+#   }
+#
+#   threshold_rules {
+#     threshold_percent = 0.9  # 90% du budget
+#     spend_basis       = "CURRENT_SPEND"
+#   }
+#
+#   threshold_rules {
+#     threshold_percent = 1.0  # 100% du budget
+#     spend_basis       = "CURRENT_SPEND"
+#   }
+#
+#   # Configuration des notifications
+#   all_updates_rule {
+#     # Pub/Sub topic pour recevoir les notifications
+#     pubsub_topic = google_pubsub_topic.budget_alerts.id
+#
+#     # Schéma de notification (optionnel)
+#     # schema_version = "1.0"
+#
+#     # Désactiver les notifications par email si vous utilisez Pub/Sub
+#     disable_default_iam_recipients = false
+#
+#     # Emails supplémentaires à notifier (optionnel)
+#     # monitoring_notification_channels = [...]
+#   }
+# }
 
 # Data source pour récupérer le numéro du projet
 data "google_project" "current" {
