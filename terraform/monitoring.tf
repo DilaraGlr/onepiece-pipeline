@@ -913,3 +913,160 @@ output "monitoring_dashboard_weekly" {
   description = "ID du dashboard de résumé hebdomadaire"
   value       = google_monitoring_dashboard.weekly_summary.id
 }
+
+# ============================================================
+# LOG-BASED METRIC - ESCALADE DE PRIVILÈGES IAM
+# ============================================================
+# Détecte toute modification de la politique IAM du projet qui ajoute
+# roles/owner, roles/editor, ou roles/resourcemanager.projectIamAdmin
+# à un nouveau membre (y compris le SA Cloud Build s'auto-attribuant ces rôles)
+#
+# Filtre sur les Admin Activity audit logs avec protoPayload.methodName="SetIamPolicy"
+# et vérifie si les rôles sensibles sont ajoutés dans les bindings
+
+resource "google_logging_metric" "iam_privilege_escalation" {
+  name   = "iam_privilege_escalation"
+  filter = <<-EOT
+    protoPayload.serviceName="cloudresourcemanager.googleapis.com"
+    AND protoPayload.methodName="SetIamPolicy"
+    AND (
+      protoPayload.serviceData.policyDelta.bindingDeltas.role="roles/owner"
+      OR protoPayload.serviceData.policyDelta.bindingDeltas.role="roles/editor"
+      OR protoPayload.serviceData.policyDelta.bindingDeltas.role="roles/resourcemanager.projectIamAdmin"
+    )
+    AND protoPayload.serviceData.policyDelta.bindingDeltas.action="ADD"
+  EOT
+
+  metric_descriptor {
+    metric_kind = "DELTA"
+    value_type  = "INT64"
+    unit        = "1"
+
+    labels {
+      key         = "principal"
+      value_type  = "STRING"
+      description = "Principal qui a effectué la modification IAM"
+    }
+
+    labels {
+      key         = "role"
+      value_type  = "STRING"
+      description = "Rôle ajouté (owner, editor, ou projectIamAdmin)"
+    }
+
+    labels {
+      key         = "member"
+      value_type  = "STRING"
+      description = "Nouveau membre auquel le rôle a été attribué"
+    }
+
+    display_name = "IAM Privilege Escalation Attempts"
+  }
+
+  label_extractors = {
+    "principal" = "EXTRACT(protoPayload.authenticationInfo.principalEmail)"
+    "role"      = "EXTRACT(protoPayload.serviceData.policyDelta.bindingDeltas.role)"
+    "member"    = "EXTRACT(protoPayload.serviceData.policyDelta.bindingDeltas.member)"
+  }
+}
+
+# ============================================================
+# ALERTING POLICY - DÉTECTION D'ESCALADE DE PRIVILÈGES
+# ============================================================
+# Alerte immédiatement si un principal (y compris le SA Cloud Build) ajoute
+# un rôle privilégié (owner, editor, projectIamAdmin) à un membre
+#
+# Cette alerte sert de mesure compensatoire au fait que le SA Cloud Build
+# a roles/resourcemanager.projectIamAdmin (voir cloudbuild.tf et deny_policy.tf)
+
+resource "google_monitoring_alert_policy" "iam_privilege_escalation" {
+  display_name = "IAM Privilege Escalation Detected"
+  combiner     = "OR"
+  enabled      = true
+
+  conditions {
+    display_name = "Rôle privilégié ajouté à un membre"
+
+    condition_threshold {
+      filter          = "resource.type=\"global\" AND metric.type=\"logging.googleapis.com/user/iam_privilege_escalation\""
+      duration        = "0s"
+      comparison      = "COMPARISON_GT"
+      threshold_value = 0
+
+      aggregations {
+        alignment_period   = "60s"
+        per_series_aligner = "ALIGN_RATE"
+      }
+    }
+  }
+
+  notification_channels = [
+    google_monitoring_notification_channel.email.id
+  ]
+
+  alert_strategy {
+    auto_close = "604800s" # 7 jours - ne ferme pas automatiquement rapidement
+  }
+
+  documentation {
+    content = <<-EOT
+    ## ALERTE SÉCURITÉ : Escalade de Privilèges IAM Détectée
+
+    Un principal a ajouté un rôle privilégié (owner, editor, ou projectIamAdmin)
+    à un membre du projet.
+
+    **Rôles surveillés :**
+    - roles/owner (contrôle total du projet)
+    - roles/editor (modification de toutes les ressources)
+    - roles/resourcemanager.projectIamAdmin (gestion des IAM bindings)
+
+    **Actions à prendre IMMÉDIATEMENT :**
+
+    1. **Identifier le changement :**
+       - Aller dans Cloud Logging : https://console.cloud.google.com/logs?project=t-lexicon-231513
+       - Filtrer sur : protoPayload.methodName="SetIamPolicy"
+       - Vérifier le principal, le rôle, et le membre cible
+
+    2. **Valider la légitimité :**
+       - Est-ce une modification prévue par le pipeline Terraform CI/CD ?
+       - Vérifier le commit Git correspondant dans DilaraGlr/onepiece-pipeline
+       - Vérifier les Pull Requests récentes mergées sur main
+
+    3. **Si NON AUTORISÉ - Révoquer immédiatement :**
+       ```bash
+       # Révoquer le binding IAM suspecte
+       gcloud projects remove-iam-policy-binding t-lexicon-231513 \
+         --member="MEMBER_FROM_LOGS" \
+         --role="ROLE_FROM_LOGS"
+       ```
+
+    4. **Si le SA Cloud Build s'est auto-attribué un rôle :**
+       - TRÈS SUSPECT : le code Terraform ne devrait jamais faire ça
+       - Analyser les changements récents dans terraform/cloudbuild.tf
+       - Vérifier l'intégrité du repository Git (commits non autorisés ?)
+       - Considérer la révocation temporaire de roles/resourcemanager.projectIamAdmin
+         au SA Cloud Build pendant l'investigation
+
+    **Contexte :**
+    Cette alerte compense le fait que le SA Cloud Build a roles/resourcemanager.projectIamAdmin
+    (nécessaire pour gérer les IAM bindings des service accounts applicatifs).
+    Voir terraform/cloudbuild.tf et terraform/iam_deny_policy.tf pour plus de détails.
+
+    **Liens utiles :**
+    - [IAM Audit Logs](https://console.cloud.google.com/logs?project=t-lexicon-231513)
+    - [IAM Policies](https://console.cloud.google.com/iam-admin/iam?project=t-lexicon-231513)
+    - [Cloud Build History](https://console.cloud.google.com/cloud-build/builds?project=t-lexicon-231513)
+    - [GitHub Repository](https://github.com/DilaraGlr/onepiece-pipeline)
+    EOT
+  }
+}
+
+output "log_metric_iam_escalation" {
+  description = "Nom de la métrique log-based pour les escalades de privilèges IAM"
+  value       = google_logging_metric.iam_privilege_escalation.name
+}
+
+output "alert_policy_iam_escalation" {
+  description = "ID de la policy d'alerte pour les escalades de privilèges IAM"
+  value       = google_monitoring_alert_policy.iam_privilege_escalation.id
+}
