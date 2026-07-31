@@ -29,13 +29,13 @@ variable "image_tag" {
   # pour éviter les rollbacks involontaires lors d'un terraform plan/apply.
   #
   # À METTRE À JOUR après chaque déploiement :
-  # - Utilisez le SHA court du commit déployé (ex: "b6c3f16")
+  # - Utilisez le SHA court du commit déployé (ex: "f10b3f4")
   # - JAMAIS "latest" : c'est un anti-pattern qui ne garantit pas la reproductibilité
   # - Le script deploy.sh override automatiquement cette valeur via -var="image_tag=${TAG}"
   #
   # Trouvez le tag actuellement déployé via :
   #   gcloud run services describe onepiece-dashboard --region=europe-west1 --format="value(spec.template.spec.containers[0].image)"
-  default     = "b6c3f16"  # Tag actuellement en production
+  default     = "f10b3f4"  # Tag actuellement en production (fix CI/CD billing_account_id)
 }
 
 variable "billing_account_id" {

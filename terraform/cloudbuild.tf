@@ -59,40 +59,199 @@ resource "google_service_account" "cloudbuild" {
 }
 
 # ============================================================
-# PERMISSIONS CLOUD BUILD
+# PERMISSIONS CLOUD BUILD - RÔLES PRÉCIS
 # ============================================================
-# Le SA Cloud Build a besoin de permissions larges pour que Terraform
-# puisse gérer toute l'infrastructure (Cloud Run, BigQuery, GCS, IAM, etc.)
+# Le SA Cloud Build utilise des rôles prédéfinis précis pour chaque service
+# géré par Terraform, conformément au principe de moindre privilège (chapitre 2).
 #
-# 3 rôles suffisants :
-# - roles/editor : gère toutes les ressources
-# - roles/resourcemanager.projectIamAdmin : gère les bindings IAM
-# - roles/storage.admin : gère GCS (buckets, objets, IAM)
+# Ce SA est utilisé UNIQUEMENT par le pipeline Cloud Build automatisé (jamais
+# par un humain), ce qui limite les risques liés à ces permissions.
 
-# Rôle 1/3 : Editor (gère Cloud Run, BigQuery, Workflows, Scheduler, Secrets, etc.)
-# Exception au principe de moindre privilège (chapitre 2) :
-# ce SA est utilisé uniquement par le pipeline Cloud Build automatisé
-# (jamais par un humain), pour build+push d'images et terraform apply.
-# Idéalement à resserrer vers roles/artifactregistry.writer,
-# roles/run.developer et roles/iam.serviceAccountUser, mais laissé
-# en Editor pour simplifier le CI/CD à ce stade.
-resource "google_project_iam_member" "cloudbuild_editor" {
+# ============================================================
+# ARTIFACT REGISTRY
+# ============================================================
+# Nécessaire pour : cloudbuild.yaml étapes 1-6 (build et push des 3 images Docker)
+# Permet de créer le repository onepiece-repo et pusher les images
+resource "google_project_iam_member" "cloudbuild_artifactregistry" {
   project = var.project_id
-  role    = "roles/editor"
+  role    = "roles/artifactregistry.admin"
   member  = "serviceAccount:${google_service_account.cloudbuild.email}"
 }
 
-# Rôle 2/3 : Project IAM Admin (gère les bindings IAM)
+# ============================================================
+# CLOUD RUN
+# ============================================================
+# Nécessaire pour : terraform apply sur google_cloud_run_v2_job (scraper, ocr, nlp)
+# et google_cloud_run_v2_service (dashboard)
+# Permet de créer, modifier, déployer les jobs et services Cloud Run
+resource "google_project_iam_member" "cloudbuild_run" {
+  project = var.project_id
+  role    = "roles/run.admin"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
+}
+
+# ============================================================
+# BIGQUERY
+# ============================================================
+# Nécessaire pour : terraform apply sur google_bigquery_dataset (onepiece, pipeline_logs,
+# billing_export) et google_bigquery_table (chapters, dialogues, speakers)
+# Permet de créer et gérer les datasets et tables BigQuery
+resource "google_project_iam_member" "cloudbuild_bigquery" {
+  project = var.project_id
+  role    = "roles/bigquery.admin"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
+}
+
+# ============================================================
+# GOOGLE CLOUD STORAGE
+# ============================================================
+# Nécessaire pour : terraform apply sur google_storage_bucket (manga_images,
+# functions_source) et google_storage_bucket_object (budget_killer_zip)
+# Permet de créer et gérer les buckets applicatifs
+# NOTE : storage.buckets.create (nécessaire pour créer des buckets) n'est disponible
+# que dans roles/storage.admin au niveau projet (pas de rôle prédéfini plus restreint)
+resource "google_project_iam_member" "cloudbuild_storage" {
+  project = var.project_id
+  role    = "roles/storage.admin"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
+}
+
+# ============================================================
+# SECRET MANAGER
+# ============================================================
+# Nécessaire pour : terraform apply sur google_secret_manager_secret (anthropic-api-key,
+# gemini-api-key)
+# Permet de créer les secrets (pas d'accès aux valeurs secrètes)
+resource "google_project_iam_member" "cloudbuild_secretmanager" {
+  project = var.project_id
+  role    = "roles/secretmanager.admin"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
+}
+
+# ============================================================
+# CLOUD SCHEDULER
+# ============================================================
+# Nécessaire pour : terraform apply sur google_cloud_scheduler_job (onepiece-scheduler)
+# Permet de créer et gérer le scheduler hebdomadaire
+resource "google_project_iam_member" "cloudbuild_scheduler" {
+  project = var.project_id
+  role    = "roles/cloudscheduler.admin"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
+}
+
+# ============================================================
+# CLOUD WORKFLOWS
+# ============================================================
+# Nécessaire pour : terraform apply sur google_workflows_workflow (onepiece-workflow)
+# Permet de créer et déployer le workflow d'orchestration
+resource "google_project_iam_member" "cloudbuild_workflows" {
+  project = var.project_id
+  role    = "roles/workflows.admin"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
+}
+
+# ============================================================
+# PUB/SUB
+# ============================================================
+# Nécessaire pour : terraform apply sur google_pubsub_topic.budget_alerts
+# et google_pubsub_subscription.budget_alerts_sub (terraform/budget.tf)
+# Permet de créer les topics et subscriptions Pub/Sub
+# roles/pubsub.editor suffit (pas besoin de .admin car on ne gère pas l'IAM sur les topics)
+resource "google_project_iam_member" "cloudbuild_pubsub" {
+  project = var.project_id
+  role    = "roles/pubsub.editor"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
+}
+
+# ============================================================
+# CLOUD FUNCTIONS
+# ============================================================
+# Nécessaire pour : terraform apply sur google_cloudfunctions2_function.budget_killer
+# (terraform/budget.tf)
+# Permet de créer et déployer la Cloud Function v2
+# roles/cloudfunctions.developer suffit (l'IAM sur le service Cloud Run de la fonction
+# est géré par roles/run.admin, pas par cloudfunctions)
+resource "google_project_iam_member" "cloudbuild_functions" {
+  project = var.project_id
+  role    = "roles/cloudfunctions.developer"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
+}
+
+# ============================================================
+# MONITORING
+# ============================================================
+# Nécessaire pour : terraform apply sur google_monitoring_notification_channel,
+# google_monitoring_alert_policy, google_monitoring_uptime_check_config,
+# google_monitoring_dashboard (terraform/monitoring.tf)
+# Permet de créer et gérer les alertes et dashboards de monitoring
+# roles/monitoring.editor suffit (pas de gestion IAM sur les ressources monitoring)
+resource "google_project_iam_member" "cloudbuild_monitoring" {
+  project = var.project_id
+  role    = "roles/monitoring.editor"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
+}
+
+# ============================================================
+# LOGGING
+# ============================================================
+# Nécessaire pour : terraform apply sur google_logging_metric (cloud_run_job_errors,
+# roi_des_pirates_mentions) et google_logging_project_sink (cloud_run_jobs_to_bigquery,
+# audit_logs_to_bigquery) dans terraform/monitoring.tf et terraform/audit.tf
+# Permet de créer et gérer les log sinks et métriques log-based
+# roles/logging.configWriter suffit (crée sinks et métriques ; l'IAM sur les datasets
+# BigQuery cibles est géré via roles/resourcemanager.projectIamAdmin)
+resource "google_project_iam_member" "cloudbuild_logging" {
+  project = var.project_id
+  role    = "roles/logging.configWriter"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
+}
+
+# ============================================================
+# SERVICE ACCOUNTS - CRÉATION
+# ============================================================
+# Nécessaire pour : terraform apply sur google_service_account (scheduler, workflow,
+# job_data, job_nlp, dashboard, budget_killer)
+# Permet de créer et gérer les service accounts du projet
+# CONDITION IAM : Restreint aux service accounts avec le préfixe "sa-" (convention du projet)
+resource "google_project_iam_member" "cloudbuild_serviceaccount_admin" {
+  project = var.project_id
+  role    = "roles/iam.serviceAccountAdmin"
+  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
+
+  condition {
+    title       = "Only manage onepiece service accounts"
+    description = "Restreint la gestion aux service accounts avec préfixe sa-"
+    expression  = "resource.name.startsWith('projects/${var.project_id}/serviceAccounts/sa-')"
+  }
+}
+
+# ============================================================
+# IAM BINDINGS - GESTION DES PERMISSIONS DES SERVICE ACCOUNTS
+# ============================================================
+# Nécessaire pour : terraform apply sur google_project_iam_member et google_*_iam_member
+# définis dans service_accounts.tf, budget.tf, monitoring.tf, audit.tf
+# Permet de donner des rôles AUX service accounts (ex: bigquery.dataEditor au SA scraper)
+# et de gérer les IAM bindings sur les ressources (buckets GCS, secrets, datasets BigQuery)
+#
+# LIMITATION TECHNIQUE DES CONDITIONS IAM :
+# Il est IMPOSSIBLE de restreindre ce rôle pour qu'il ne puisse créer des bindings que
+# pour certains membres (ex: uniquement les SA avec préfixe sa-). Les conditions IAM
+# permettent de filtrer sur resource.* (la ressource affectée) mais PAS sur le membre
+# cible du binding IAM. GCP ne fournit pas d'attribut request.member ou equivalent.
+#
+# CONSÉQUENCE : Le SA Cloud Build peut techniquement donner n'importe quel rôle à
+# n'importe quel membre (y compris à lui-même ou à un compte externe).
+#
+# MITIGATIONS (chapitre 2 - moindre privilège) :
+# 1. Ce SA est utilisé UNIQUEMENT par Cloud Build (pas par des humains)
+# 2. Les builds sont déclenchés uniquement sur push main (code reviewé via PR)
+# 3. Branch protection rules GitHub : require PR review avant merge sur main
+# 4. Audit logs activés (audit.tf) pour tracer toutes les modifications IAM
+# 5. Alternative rejetée : créer les bindings IAM manuellement (hors Terraform)
+#    casse le principe "Infrastructure as Code"
 resource "google_project_iam_member" "cloudbuild_iam_admin" {
   project = var.project_id
   role    = "roles/resourcemanager.projectIamAdmin"
-  member  = "serviceAccount:${google_service_account.cloudbuild.email}"
-}
-
-# Rôle 3/3 : Storage Admin (gère tous les buckets GCS)
-resource "google_project_iam_member" "cloudbuild_storage_admin" {
-  project = var.project_id
-  role    = "roles/storage.admin"
   member  = "serviceAccount:${google_service_account.cloudbuild.email}"
 }
 

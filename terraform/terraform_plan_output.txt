@@ -1,0 +1,548 @@
+[0m[1mdata.archive_file.budget_killer_source: Reading...[0m[0m
+[0m[1mdata.archive_file.budget_killer_source: Read complete after 0s [id=17988982c41002180ecb82a58b14972fb57cf7e6][0m
+[0m[1mgoogle_service_account.dashboard: Refreshing state... [id=projects/t-lexicon-231513/serviceAccounts/sa-dashboard@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_project_iam_member.cloudbuild_editor: Refreshing state... [id=t-lexicon-231513/roles/editor/serviceAccount:sa-cloudbuild@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_project_iam_member.cloudbuild_storage_admin: Refreshing state... [id=t-lexicon-231513/roles/storage.admin/serviceAccount:sa-cloudbuild@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_monitoring_notification_channel.email: Refreshing state... [id=projects/t-lexicon-231513/notificationChannels/6432747784938097339][0m
+[0m[1mgoogle_service_account.budget_killer: Refreshing state... [id=projects/t-lexicon-231513/serviceAccounts/sa-budget-killer@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_project_iam_audit_config.storage_audit: Refreshing state... [id=t-lexicon-231513/audit_config/storage.googleapis.com][0m
+[0m[1mgoogle_project_iam_audit_config.bigquery_audit: Refreshing state... [id=t-lexicon-231513/audit_config/bigquery.googleapis.com][0m
+[0m[1mdata.google_project.current: Reading...[0m[0m
+[0m[1mgoogle_logging_metric.roi_des_pirates_mentions: Refreshing state... [id=roi_des_pirates_mentions][0m
+[0m[1mgoogle_monitoring_uptime_check_config.dashboard: Refreshing state... [id=projects/t-lexicon-231513/uptimeCheckConfigs/dashboard-uptime-check-80ZBAeNaoVI][0m
+[0m[1mgoogle_bigquery_dataset.billing_export: Refreshing state... [id=projects/t-lexicon-231513/datasets/billing_export][0m
+[0m[1mgoogle_secret_manager_secret.anthropic_api_key: Refreshing state... [id=projects/t-lexicon-231513/secrets/anthropic-api-key][0m
+[0m[1mgoogle_bigquery_dataset.pipeline_logs: Refreshing state... [id=projects/t-lexicon-231513/datasets/pipeline_logs][0m
+[0m[1mgoogle_pubsub_topic.budget_alerts: Refreshing state... [id=projects/t-lexicon-231513/topics/budget-alerts][0m
+[0m[1mgoogle_service_account.job_data: Refreshing state... [id=projects/t-lexicon-231513/serviceAccounts/sa-job-data@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_service_account.scheduler: Refreshing state... [id=projects/t-lexicon-231513/serviceAccounts/sa-scheduler@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_bigquery_dataset.onepiece: Refreshing state... [id=projects/t-lexicon-231513/datasets/onepiece][0m
+[0m[1mgoogle_secret_manager_secret.gemini_api_key: Refreshing state... [id=projects/t-lexicon-231513/secrets/gemini-api-key][0m
+[0m[1mgoogle_storage_bucket.functions_source: Refreshing state... [id=t-lexicon-231513-functions-source][0m
+[0m[1mgoogle_logging_metric.cloud_run_job_errors: Refreshing state... [id=cloud_run_job_errors][0m
+[0m[1mgoogle_artifact_registry_repository.onepiece_repo: Refreshing state... [id=projects/t-lexicon-231513/locations/europe-west1/repositories/onepiece-repo][0m
+[0m[1mgoogle_bigquery_dataset.audit_logs: Refreshing state... [id=projects/t-lexicon-231513/datasets/audit_logs][0m
+[0m[1mgoogle_service_account.cloudbuild: Refreshing state... [id=projects/t-lexicon-231513/serviceAccounts/sa-cloudbuild@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_service_account.workflow: Refreshing state... [id=projects/t-lexicon-231513/serviceAccounts/sa-workflow@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_monitoring_dashboard.pipeline: Refreshing state... [id=projects/991582752931/dashboards/4c70a24d-3ff8-456a-aa0d-457c465b0e29][0m
+[0m[1mgoogle_monitoring_dashboard.weekly_summary: Refreshing state... [id=projects/991582752931/dashboards/dc20a969-e674-464c-8cd8-cff5783a9080][0m
+[0m[1mdata.google_project.current: Read complete after 0s [id=projects/t-lexicon-231513][0m
+[0m[1mgoogle_service_account.job_nlp: Refreshing state... [id=projects/t-lexicon-231513/serviceAccounts/sa-job-nlp@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_project_iam_audit_config.secretmanager_audit: Refreshing state... [id=t-lexicon-231513/audit_config/secretmanager.googleapis.com][0m
+[0m[1mgoogle_project_iam_audit_config.run_audit: Refreshing state... [id=t-lexicon-231513/audit_config/run.googleapis.com][0m
+[0m[1mgoogle_storage_bucket.manga_images: Refreshing state... [id=onepiece-manga-images-tlex][0m
+[0m[1mgoogle_monitoring_alert_policy.dashboard_downtime: Refreshing state... [id=projects/t-lexicon-231513/alertPolicies/8975942645599709620][0m
+[0m[1mgoogle_monitoring_alert_policy.cloud_run_job_failure: Refreshing state... [id=projects/t-lexicon-231513/alertPolicies/16776689770346386570][0m
+[0m[1mgoogle_pubsub_subscription.budget_alerts_sub: Refreshing state... [id=projects/t-lexicon-231513/subscriptions/budget-alerts-subscription][0m
+[0m[1mgoogle_project_iam_member.dashboard_bq_job_user: Refreshing state... [id=t-lexicon-231513/roles/bigquery.jobUser/serviceAccount:sa-dashboard@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_cloud_run_v2_service.dashboard: Refreshing state... [id=projects/t-lexicon-231513/locations/europe-west1/services/onepiece-dashboard][0m
+[0m[1mgoogle_project_iam_member.dashboard_bq_viewer: Refreshing state... [id=t-lexicon-231513/roles/bigquery.dataViewer/serviceAccount:sa-dashboard@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_project_iam_member.budget_killer_billing_manager: Refreshing state... [id=t-lexicon-231513/roles/billing.projectManager/serviceAccount:sa-budget-killer@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_project_iam_member.job_data_bq_editor: Refreshing state... [id=t-lexicon-231513/roles/bigquery.dataEditor/serviceAccount:sa-job-data@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_project_iam_member.job_data_bq_job_user: Refreshing state... [id=t-lexicon-231513/roles/bigquery.jobUser/serviceAccount:sa-job-data@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_cloud_run_v2_job.scraper: Refreshing state... [id=projects/t-lexicon-231513/locations/europe-west1/jobs/onepiece-scraper-job][0m
+[0m[1mgoogle_cloud_run_v2_job.ocr: Refreshing state... [id=projects/t-lexicon-231513/locations/europe-west1/jobs/ocr-pipeline-job][0m
+[0m[1mgoogle_logging_project_sink.cloud_run_jobs_to_bigquery: Refreshing state... [id=projects/t-lexicon-231513/sinks/cloud-run-jobs-to-bigquery][0m
+[0m[1mgoogle_cloud_scheduler_job.weekly: Refreshing state... [id=projects/t-lexicon-231513/locations/europe-west1/jobs/onepiece-scheduler][0m
+[0m[1mgoogle_project_iam_member.scheduler_workflow_invoker: Refreshing state... [id=t-lexicon-231513/roles/workflows.invoker/serviceAccount:sa-scheduler@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_storage_bucket_object.budget_killer_zip: Refreshing state... [id=t-lexicon-231513-functions-source-kill-billing-1de2aa8e41aa0ad32c613a515f04cb2a.zip][0m
+[0m[1mgoogle_secret_manager_secret_iam_member.job_data_gemini_access: Refreshing state... [id=projects/t-lexicon-231513/secrets/gemini-api-key/roles/secretmanager.secretAccessor/serviceAccount:sa-job-data@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_bigquery_table.chapters: Refreshing state... [id=projects/t-lexicon-231513/datasets/onepiece/tables/chapters][0m
+[0m[1mgoogle_bigquery_table.dialogues: Refreshing state... [id=projects/t-lexicon-231513/datasets/onepiece/tables/dialogues][0m
+[0m[1mgoogle_bigquery_table.speakers: Refreshing state... [id=projects/t-lexicon-231513/datasets/onepiece/tables/speakers][0m
+[0m[1mgoogle_logging_project_sink.audit_logs_to_bigquery: Refreshing state... [id=projects/t-lexicon-231513/sinks/audit-logs-to-bigquery][0m
+[0m[1mgoogle_storage_bucket_iam_member.job_data_manga_images: Refreshing state... [id=b/onepiece-manga-images-tlex/roles/storage.objectAdmin/serviceAccount:sa-job-data@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_project_iam_member.cloudbuild_iam_admin: Refreshing state... [id=t-lexicon-231513/roles/resourcemanager.projectIamAdmin/serviceAccount:sa-cloudbuild@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_project_iam_member.workflow_logging_writer: Refreshing state... [id=t-lexicon-231513/roles/logging.logWriter/serviceAccount:sa-workflow@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_project_iam_member.workflow_run_invoker: Refreshing state... [id=t-lexicon-231513/roles/run.invoker/serviceAccount:sa-workflow@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_project_iam_member.workflow_run_viewer: Refreshing state... [id=t-lexicon-231513/roles/run.viewer/serviceAccount:sa-workflow@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_cloud_run_v2_job.nlp: Refreshing state... [id=projects/t-lexicon-231513/locations/europe-west1/jobs/nlp-pipeline-job][0m
+[0m[1mgoogle_project_iam_member.job_nlp_bq_editor: Refreshing state... [id=t-lexicon-231513/roles/bigquery.dataEditor/serviceAccount:sa-job-nlp@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_project_iam_member.job_nlp_bq_job_user: Refreshing state... [id=t-lexicon-231513/roles/bigquery.jobUser/serviceAccount:sa-job-nlp@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_secret_manager_secret_iam_member.job_nlp_anthropic_access: Refreshing state... [id=projects/t-lexicon-231513/secrets/anthropic-api-key/roles/secretmanager.secretAccessor/serviceAccount:sa-job-nlp@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_cloud_run_service_iam_member.dashboard_restricted: Refreshing state... [id=v1/projects/t-lexicon-231513/locations/europe-west1/services/onepiece-dashboard/roles/run.invoker/user:guler.dilara2000@gmail.com][0m
+[0m[1mgoogle_cloudfunctions2_function.budget_killer: Refreshing state... [id=projects/t-lexicon-231513/locations/europe-west1/functions/budget-killer][0m
+[0m[1mgoogle_bigquery_dataset_iam_member.pipeline_logs_writer: Refreshing state... [id=projects/t-lexicon-231513/datasets/pipeline_logs/roles/bigquery.dataEditor/serviceAccount:service-991582752931@gcp-sa-logging.iam.gserviceaccount.com][0m
+[0m[1mgoogle_bigquery_dataset_iam_member.audit_logs_writer: Refreshing state... [id=projects/t-lexicon-231513/datasets/audit_logs/roles/bigquery.dataEditor/serviceAccount:service-991582752931@gcp-sa-logging.iam.gserviceaccount.com][0m
+[0m[1mgoogle_cloud_run_service_iam_member.budget_killer_invoker: Refreshing state... [id=v1/projects/t-lexicon-231513/locations/europe-west1/services/budget-killer/roles/run.invoker/serviceAccount:sa-budget-killer@t-lexicon-231513.iam.gserviceaccount.com][0m
+[0m[1mgoogle_workflows_workflow.onepiece: Refreshing state... [id=projects/t-lexicon-231513/locations/europe-west1/workflows/onepiece-workflow][0m
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  [32m+[0m create[0m
+  [33m~[0m update in-place[0m
+  [31m-[0m destroy[0m
+[31m-[0m/[32m+[0m destroy and then create replacement[0m
+
+Terraform will perform the following actions:
+
+[1m  # google_cloudfunctions2_function.budget_killer[0m will be updated in-place
+[0m  [33m~[0m[0m resource "google_cloudfunctions2_function" "budget_killer" {
+        id          = "projects/t-lexicon-231513/locations/europe-west1/functions/budget-killer"
+        name        = "budget-killer"
+        [90m# (8 unchanged attributes hidden)[0m[0m
+
+      [33m~[0m[0m build_config {
+          [31m-[0m[0m docker_repository     = "projects/t-lexicon-231513/locations/europe-west1/repositories/gcf-artifacts" [90m-> null[0m[0m
+            [90m# (4 unchanged attributes hidden)[0m[0m
+
+          [33m~[0m[0m source {
+              [33m~[0m[0m storage_source {
+                  [33m~[0m[0m object     = "kill-billing-1de2aa8e41aa0ad32c613a515f04cb2a.zip" [33m->[0m[0m "kill-billing-092e1533fd65243fd8996e6b1f078b3b.zip"
+                    [90m# (2 unchanged attributes hidden)[0m[0m
+                }
+            }
+        }
+
+      [33m~[0m[0m service_config {
+          [33m~[0m[0m environment_variables            = {
+              [31m-[0m[0m "LOG_EXECUTION_ID" = "true" [90m-> null[0m[0m
+                [90m# (1 unchanged element hidden)[0m[0m
+            }
+            [90m# (11 unchanged attributes hidden)[0m[0m
+        }
+
+        [90m# (1 unchanged block hidden)[0m[0m
+    }
+
+[1m  # google_logging_metric.iam_privilege_escalation[0m will be created
+[0m  [32m+[0m[0m resource "google_logging_metric" "iam_privilege_escalation" {
+      [32m+[0m[0m filter           = <<-EOT
+            protoPayload.serviceName="cloudresourcemanager.googleapis.com"
+            AND protoPayload.methodName="SetIamPolicy"
+            AND (
+              protoPayload.serviceData.policyDelta.bindingDeltas.role="roles/owner"
+              OR protoPayload.serviceData.policyDelta.bindingDeltas.role="roles/editor"
+              OR protoPayload.serviceData.policyDelta.bindingDeltas.role="roles/resourcemanager.projectIamAdmin"
+            )
+            AND protoPayload.serviceData.policyDelta.bindingDeltas.action="ADD"
+        EOT
+      [32m+[0m[0m id               = (known after apply)
+      [32m+[0m[0m label_extractors = {
+          [32m+[0m[0m "member"    = "EXTRACT(protoPayload.serviceData.policyDelta.bindingDeltas.member)"
+          [32m+[0m[0m "principal" = "EXTRACT(protoPayload.authenticationInfo.principalEmail)"
+          [32m+[0m[0m "role"      = "EXTRACT(protoPayload.serviceData.policyDelta.bindingDeltas.role)"
+        }
+      [32m+[0m[0m name             = "iam_privilege_escalation"
+      [32m+[0m[0m project          = (known after apply)
+
+      [32m+[0m[0m metric_descriptor {
+          [32m+[0m[0m display_name = "IAM Privilege Escalation Attempts"
+          [32m+[0m[0m metric_kind  = "DELTA"
+          [32m+[0m[0m unit         = "1"
+          [32m+[0m[0m value_type   = "INT64"
+
+          [32m+[0m[0m labels {
+              [32m+[0m[0m description = "Nouveau membre auquel le rôle a été attribué"
+              [32m+[0m[0m key         = "member"
+              [32m+[0m[0m value_type  = "STRING"
+            }
+          [32m+[0m[0m labels {
+              [32m+[0m[0m description = "Principal qui a effectué la modification IAM"
+              [32m+[0m[0m key         = "principal"
+              [32m+[0m[0m value_type  = "STRING"
+            }
+          [32m+[0m[0m labels {
+              [32m+[0m[0m description = "Rôle ajouté (owner, editor, ou projectIamAdmin)"
+              [32m+[0m[0m key         = "role"
+              [32m+[0m[0m value_type  = "STRING"
+            }
+        }
+    }
+
+[1m  # google_monitoring_alert_policy.iam_privilege_escalation[0m will be created
+[0m  [32m+[0m[0m resource "google_monitoring_alert_policy" "iam_privilege_escalation" {
+      [32m+[0m[0m combiner              = "OR"
+      [32m+[0m[0m creation_record       = (known after apply)
+      [32m+[0m[0m display_name          = "IAM Privilege Escalation Detected"
+      [32m+[0m[0m enabled               = true
+      [32m+[0m[0m id                    = (known after apply)
+      [32m+[0m[0m name                  = (known after apply)
+      [32m+[0m[0m notification_channels = [
+          [32m+[0m[0m "projects/t-lexicon-231513/notificationChannels/6432747784938097339",
+        ]
+      [32m+[0m[0m project               = (known after apply)
+
+      [32m+[0m[0m alert_strategy {
+          [32m+[0m[0m auto_close = "604800s"
+        }
+
+      [32m+[0m[0m conditions {
+          [32m+[0m[0m display_name = "Rôle privilégié ajouté à un membre"
+          [32m+[0m[0m name         = (known after apply)
+
+          [32m+[0m[0m condition_threshold {
+              [32m+[0m[0m comparison      = "COMPARISON_GT"
+              [32m+[0m[0m duration        = "0s"
+              [32m+[0m[0m filter          = "metric.type=\"logging.googleapis.com/user/iam_privilege_escalation\""
+              [32m+[0m[0m threshold_value = 0
+
+              [32m+[0m[0m aggregations {
+                  [32m+[0m[0m alignment_period   = "60s"
+                  [32m+[0m[0m per_series_aligner = "ALIGN_RATE"
+                }
+            }
+        }
+
+      [32m+[0m[0m documentation {
+          [32m+[0m[0m content   = <<-EOT
+                ## ALERTE SÉCURITÉ : Escalade de Privilèges IAM Détectée
+                
+                Un principal a ajouté un rôle privilégié (owner, editor, ou projectIamAdmin)
+                à un membre du projet.
+                
+                **Rôles surveillés :**
+                - roles/owner (contrôle total du projet)
+                - roles/editor (modification de toutes les ressources)
+                - roles/resourcemanager.projectIamAdmin (gestion des IAM bindings)
+                
+                **Actions à prendre IMMÉDIATEMENT :**
+                
+                1. **Identifier le changement :**
+                   - Aller dans Cloud Logging : https://console.cloud.google.com/logs?project=t-lexicon-231513
+                   - Filtrer sur : protoPayload.methodName="SetIamPolicy"
+                   - Vérifier le principal, le rôle, et le membre cible
+                
+                2. **Valider la légitimité :**
+                   - Est-ce une modification prévue par le pipeline Terraform CI/CD ?
+                   - Vérifier le commit Git correspondant dans DilaraGlr/onepiece-pipeline
+                   - Vérifier les Pull Requests récentes mergées sur main
+                
+                3. **Si NON AUTORISÉ - Révoquer immédiatement :**
+                   ```bash
+                   # Révoquer le binding IAM suspecte
+                   gcloud projects remove-iam-policy-binding t-lexicon-231513 \
+                     --member="MEMBER_FROM_LOGS" \
+                     --role="ROLE_FROM_LOGS"
+                   ```
+                
+                4. **Si le SA Cloud Build s'est auto-attribué un rôle :**
+                   - TRÈS SUSPECT : le code Terraform ne devrait jamais faire ça
+                   - Analyser les changements récents dans terraform/cloudbuild.tf
+                   - Vérifier l'intégrité du repository Git (commits non autorisés ?)
+                   - Considérer la révocation temporaire de roles/resourcemanager.projectIamAdmin
+                     au SA Cloud Build pendant l'investigation
+                
+                **Contexte :**
+                Cette alerte compense le fait que le SA Cloud Build a roles/resourcemanager.projectIamAdmin
+                (nécessaire pour gérer les IAM bindings des service accounts applicatifs).
+                Voir terraform/cloudbuild.tf et terraform/iam_deny_policy.tf pour plus de détails.
+                
+                **Liens utiles :**
+                - [IAM Audit Logs](https://console.cloud.google.com/logs?project=t-lexicon-231513)
+                - [IAM Policies](https://console.cloud.google.com/iam-admin/iam?project=t-lexicon-231513)
+                - [Cloud Build History](https://console.cloud.google.com/cloud-build/builds?project=t-lexicon-231513)
+                - [GitHub Repository](https://github.com/DilaraGlr/onepiece-pipeline)
+            EOT
+          [32m+[0m[0m mime_type = "text/markdown"
+        }
+    }
+
+[1m  # google_monitoring_dashboard.pipeline[0m will be updated in-place
+[0m  [33m~[0m[0m resource "google_monitoring_dashboard" "pipeline" {
+      [33m~[0m[0m dashboard_json = jsonencode(
+          [33m~[0m[0m {
+              [31m-[0m[0m etag         = "7f7a851953eed0e459ec2829a4fb48a6"
+              [33m~[0m[0m mosaicLayout = {
+                  [33m~[0m[0m tiles   = [
+                      [33m~[0m[0m {
+                          [32m+[0m[0m xPos   = 0
+                          [32m+[0m[0m yPos   = 0
+                            [90m# (3 unchanged attributes hidden)[0m[0m
+                        },
+                      [33m~[0m[0m {
+                          [32m+[0m[0m yPos   = 0
+                            [90m# (4 unchanged attributes hidden)[0m[0m
+                        },
+                      [33m~[0m[0m {
+                          [32m+[0m[0m xPos   = 0
+                            [90m# (4 unchanged attributes hidden)[0m[0m
+                        },
+                      [33m~[0m[0m {
+                          [32m+[0m[0m xPos   = 0
+                            [90m# (4 unchanged attributes hidden)[0m[0m
+                        },
+                      [33m~[0m[0m {
+                          [32m+[0m[0m xPos   = 0
+                            [90m# (4 unchanged attributes hidden)[0m[0m
+                        },
+                        {
+                            height = 2
+                            widget = {
+                                scorecard = {
+                                    sparkChartView  = {
+                                        sparkChartType = "SPARK_LINE"
+                                    }
+                                    timeSeriesQuery = {
+                                        timeSeriesFilter = {
+                                            aggregation = {
+                                                alignmentPeriod    = "86400s"
+                                                crossSeriesReducer = "REDUCE_SUM"
+                                                perSeriesAligner   = "ALIGN_SUM"
+                                            }
+                                            filter      = "resource.type=\"cloud_run_job\" AND metric.type=\"run.googleapis.com/job/completed_execution_count\" AND metric.label.result=\"succeeded\""
+                                        }
+                                    }
+                                }
+                                title     = "Taux succès (24h)"
+                            }
+                            width  = 6
+                            xPos   = 6
+                            yPos   = 11
+                        },
+                      [33m~[0m[0m {
+                          [32m+[0m[0m xPos   = 0
+                            [90m# (4 unchanged attributes hidden)[0m[0m
+                        },
+                      [33m~[0m[0m {
+                          [32m+[0m[0m xPos   = 0
+                            [90m# (4 unchanged attributes hidden)[0m[0m
+                        },
+                    ]
+                    [90m# (1 unchanged attribute hidden)[0m[0m
+                }
+              [31m-[0m[0m name         = "projects/991582752931/dashboards/4c70a24d-3ff8-456a-aa0d-457c465b0e29"
+                [90m# (1 unchanged attribute hidden)[0m[0m
+            }
+        )
+        id             = "projects/991582752931/dashboards/4c70a24d-3ff8-456a-aa0d-457c465b0e29"
+        [90m# (1 unchanged attribute hidden)[0m[0m
+    }
+
+[1m  # google_monitoring_dashboard.weekly_summary[0m will be updated in-place
+[0m  [33m~[0m[0m resource "google_monitoring_dashboard" "weekly_summary" {
+      [33m~[0m[0m dashboard_json = jsonencode(
+          [33m~[0m[0m {
+              [31m-[0m[0m etag         = "6a0a134947be0de857d18a7a71a8eaac"
+              [33m~[0m[0m mosaicLayout = {
+                  [33m~[0m[0m tiles   = [
+                      [33m~[0m[0m {
+                          [32m+[0m[0m xPos   = 0
+                          [32m+[0m[0m yPos   = 0
+                            [90m# (3 unchanged attributes hidden)[0m[0m
+                        },
+                      [33m~[0m[0m {
+                          [32m+[0m[0m yPos   = 0
+                            [90m# (4 unchanged attributes hidden)[0m[0m
+                        },
+                      [33m~[0m[0m {
+                          [32m+[0m[0m yPos   = 0
+                            [90m# (4 unchanged attributes hidden)[0m[0m
+                        },
+                      [33m~[0m[0m {
+                          [32m+[0m[0m xPos   = 0
+                            [90m# (4 unchanged attributes hidden)[0m[0m
+                        },
+                      [33m~[0m[0m {
+                          [32m+[0m[0m xPos   = 0
+                            [90m# (4 unchanged attributes hidden)[0m[0m
+                        },
+                        {
+                            height = 3
+                            widget = {
+                                scorecard = {
+                                    sparkChartView  = {
+                                        sparkChartType = "SPARK_LINE"
+                                    }
+                                    timeSeriesQuery = {
+                                        timeSeriesFilter = {
+                                            aggregation = {
+                                                alignmentPeriod    = "604800s"
+                                                crossSeriesReducer = "REDUCE_SUM"
+                                                perSeriesAligner   = "ALIGN_SUM"
+                                            }
+                                            filter      = "metric.type=\"logging.googleapis.com/user/roi_des_pirates_mentions\""
+                                        }
+                                    }
+                                }
+                                title     = "Mentions 'roi des pirates' (7j)"
+                            }
+                            width  = 6
+                            xPos   = 6
+                            yPos   = 7
+                        },
+                      [33m~[0m[0m {
+                          [32m+[0m[0m xPos   = 0
+                            [90m# (4 unchanged attributes hidden)[0m[0m
+                        },
+                      [33m~[0m[0m {
+                          [32m+[0m[0m xPos   = 0
+                            [90m# (4 unchanged attributes hidden)[0m[0m
+                        },
+                    ]
+                    [90m# (1 unchanged attribute hidden)[0m[0m
+                }
+              [31m-[0m[0m name         = "projects/991582752931/dashboards/dc20a969-e674-464c-8cd8-cff5783a9080"
+                [90m# (1 unchanged attribute hidden)[0m[0m
+            }
+        )
+        id             = "projects/991582752931/dashboards/dc20a969-e674-464c-8cd8-cff5783a9080"
+        [90m# (1 unchanged attribute hidden)[0m[0m
+    }
+
+[1m  # google_project_iam_member.cloudbuild_artifactregistry[0m will be created
+[0m  [32m+[0m[0m resource "google_project_iam_member" "cloudbuild_artifactregistry" {
+      [32m+[0m[0m etag    = (known after apply)
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m member  = "serviceAccount:sa-cloudbuild@t-lexicon-231513.iam.gserviceaccount.com"
+      [32m+[0m[0m project = "t-lexicon-231513"
+      [32m+[0m[0m role    = "roles/artifactregistry.admin"
+    }
+
+[1m  # google_project_iam_member.cloudbuild_bigquery[0m will be created
+[0m  [32m+[0m[0m resource "google_project_iam_member" "cloudbuild_bigquery" {
+      [32m+[0m[0m etag    = (known after apply)
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m member  = "serviceAccount:sa-cloudbuild@t-lexicon-231513.iam.gserviceaccount.com"
+      [32m+[0m[0m project = "t-lexicon-231513"
+      [32m+[0m[0m role    = "roles/bigquery.admin"
+    }
+
+[1m  # google_project_iam_member.cloudbuild_editor[0m will be [1m[31mdestroyed[0m
+  # (because google_project_iam_member.cloudbuild_editor is not in configuration)
+[0m  [31m-[0m[0m resource "google_project_iam_member" "cloudbuild_editor" {
+      [31m-[0m[0m etag    = "BwZW+A+QCFo=" [90m-> null[0m[0m
+      [31m-[0m[0m id      = "t-lexicon-231513/roles/editor/serviceAccount:sa-cloudbuild@t-lexicon-231513.iam.gserviceaccount.com" [90m-> null[0m[0m
+      [31m-[0m[0m member  = "serviceAccount:sa-cloudbuild@t-lexicon-231513.iam.gserviceaccount.com" [90m-> null[0m[0m
+      [31m-[0m[0m project = "t-lexicon-231513" [90m-> null[0m[0m
+      [31m-[0m[0m role    = "roles/editor" [90m-> null[0m[0m
+    }
+
+[1m  # google_project_iam_member.cloudbuild_functions[0m will be created
+[0m  [32m+[0m[0m resource "google_project_iam_member" "cloudbuild_functions" {
+      [32m+[0m[0m etag    = (known after apply)
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m member  = "serviceAccount:sa-cloudbuild@t-lexicon-231513.iam.gserviceaccount.com"
+      [32m+[0m[0m project = "t-lexicon-231513"
+      [32m+[0m[0m role    = "roles/cloudfunctions.developer"
+    }
+
+[1m  # google_project_iam_member.cloudbuild_logging[0m will be created
+[0m  [32m+[0m[0m resource "google_project_iam_member" "cloudbuild_logging" {
+      [32m+[0m[0m etag    = (known after apply)
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m member  = "serviceAccount:sa-cloudbuild@t-lexicon-231513.iam.gserviceaccount.com"
+      [32m+[0m[0m project = "t-lexicon-231513"
+      [32m+[0m[0m role    = "roles/logging.configWriter"
+    }
+
+[1m  # google_project_iam_member.cloudbuild_monitoring[0m will be created
+[0m  [32m+[0m[0m resource "google_project_iam_member" "cloudbuild_monitoring" {
+      [32m+[0m[0m etag    = (known after apply)
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m member  = "serviceAccount:sa-cloudbuild@t-lexicon-231513.iam.gserviceaccount.com"
+      [32m+[0m[0m project = "t-lexicon-231513"
+      [32m+[0m[0m role    = "roles/monitoring.editor"
+    }
+
+[1m  # google_project_iam_member.cloudbuild_pubsub[0m will be created
+[0m  [32m+[0m[0m resource "google_project_iam_member" "cloudbuild_pubsub" {
+      [32m+[0m[0m etag    = (known after apply)
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m member  = "serviceAccount:sa-cloudbuild@t-lexicon-231513.iam.gserviceaccount.com"
+      [32m+[0m[0m project = "t-lexicon-231513"
+      [32m+[0m[0m role    = "roles/pubsub.editor"
+    }
+
+[1m  # google_project_iam_member.cloudbuild_run[0m will be created
+[0m  [32m+[0m[0m resource "google_project_iam_member" "cloudbuild_run" {
+      [32m+[0m[0m etag    = (known after apply)
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m member  = "serviceAccount:sa-cloudbuild@t-lexicon-231513.iam.gserviceaccount.com"
+      [32m+[0m[0m project = "t-lexicon-231513"
+      [32m+[0m[0m role    = "roles/run.admin"
+    }
+
+[1m  # google_project_iam_member.cloudbuild_scheduler[0m will be created
+[0m  [32m+[0m[0m resource "google_project_iam_member" "cloudbuild_scheduler" {
+      [32m+[0m[0m etag    = (known after apply)
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m member  = "serviceAccount:sa-cloudbuild@t-lexicon-231513.iam.gserviceaccount.com"
+      [32m+[0m[0m project = "t-lexicon-231513"
+      [32m+[0m[0m role    = "roles/cloudscheduler.admin"
+    }
+
+[1m  # google_project_iam_member.cloudbuild_secretmanager[0m will be created
+[0m  [32m+[0m[0m resource "google_project_iam_member" "cloudbuild_secretmanager" {
+      [32m+[0m[0m etag    = (known after apply)
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m member  = "serviceAccount:sa-cloudbuild@t-lexicon-231513.iam.gserviceaccount.com"
+      [32m+[0m[0m project = "t-lexicon-231513"
+      [32m+[0m[0m role    = "roles/secretmanager.admin"
+    }
+
+[1m  # google_project_iam_member.cloudbuild_serviceaccount_admin[0m will be created
+[0m  [32m+[0m[0m resource "google_project_iam_member" "cloudbuild_serviceaccount_admin" {
+      [32m+[0m[0m etag    = (known after apply)
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m member  = "serviceAccount:sa-cloudbuild@t-lexicon-231513.iam.gserviceaccount.com"
+      [32m+[0m[0m project = "t-lexicon-231513"
+      [32m+[0m[0m role    = "roles/iam.serviceAccountAdmin"
+
+      [32m+[0m[0m condition {
+          [32m+[0m[0m description = "Restreint la gestion aux service accounts avec préfixe sa-"
+          [32m+[0m[0m expression  = "resource.name.startsWith('projects/t-lexicon-231513/serviceAccounts/sa-')"
+          [32m+[0m[0m title       = "Only manage onepiece service accounts"
+        }
+    }
+
+[1m  # google_project_iam_member.cloudbuild_storage[0m will be created
+[0m  [32m+[0m[0m resource "google_project_iam_member" "cloudbuild_storage" {
+      [32m+[0m[0m etag    = (known after apply)
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m member  = "serviceAccount:sa-cloudbuild@t-lexicon-231513.iam.gserviceaccount.com"
+      [32m+[0m[0m project = "t-lexicon-231513"
+      [32m+[0m[0m role    = "roles/storage.admin"
+    }
+
+[1m  # google_project_iam_member.cloudbuild_storage_admin[0m will be [1m[31mdestroyed[0m
+  # (because google_project_iam_member.cloudbuild_storage_admin is not in configuration)
+[0m  [31m-[0m[0m resource "google_project_iam_member" "cloudbuild_storage_admin" {
+      [31m-[0m[0m etag    = "BwZW+A+QCFo=" [90m-> null[0m[0m
+      [31m-[0m[0m id      = "t-lexicon-231513/roles/storage.admin/serviceAccount:sa-cloudbuild@t-lexicon-231513.iam.gserviceaccount.com" [90m-> null[0m[0m
+      [31m-[0m[0m member  = "serviceAccount:sa-cloudbuild@t-lexicon-231513.iam.gserviceaccount.com" [90m-> null[0m[0m
+      [31m-[0m[0m project = "t-lexicon-231513" [90m-> null[0m[0m
+      [31m-[0m[0m role    = "roles/storage.admin" [90m-> null[0m[0m
+    }
+
+[1m  # google_project_iam_member.cloudbuild_workflows[0m will be created
+[0m  [32m+[0m[0m resource "google_project_iam_member" "cloudbuild_workflows" {
+      [32m+[0m[0m etag    = (known after apply)
+      [32m+[0m[0m id      = (known after apply)
+      [32m+[0m[0m member  = "serviceAccount:sa-cloudbuild@t-lexicon-231513.iam.gserviceaccount.com"
+      [32m+[0m[0m project = "t-lexicon-231513"
+      [32m+[0m[0m role    = "roles/workflows.admin"
+    }
+
+[1m  # google_storage_bucket_object.budget_killer_zip[0m must be [1m[31mreplaced[0m
+[0m[31m-[0m/[32m+[0m[0m resource "google_storage_bucket_object" "budget_killer_zip" {
+      [32m+[0m[0m content          = (sensitive value)
+      [33m~[0m[0m content_type     = "application/zip" -> (known after apply)
+      [33m~[0m[0m crc32c           = "tKt4eQ==" -> (known after apply)
+      [33m~[0m[0m detect_md5hash   = "HeKqjkGqCtMsYTpRXwTLKg==" [33m->[0m[0m "different hash" [31m# forces replacement[0m[0m
+      [31m-[0m[0m event_based_hold = false [90m-> null[0m[0m
+      [33m~[0m[0m id               = "t-lexicon-231513-functions-source-kill-billing-1de2aa8e41aa0ad32c613a515f04cb2a.zip" -> (known after apply)
+      [32m+[0m[0m kms_key_name     = (known after apply)
+      [33m~[0m[0m md5hash          = "HeKqjkGqCtMsYTpRXwTLKg==" -> (known after apply)
+      [33m~[0m[0m media_link       = "https://storage.googleapis.com/download/storage/v1/b/t-lexicon-231513-functions-source/o/kill-billing-1de2aa8e41aa0ad32c613a515f04cb2a.zip?generation=1784899632991394&alt=media" -> (known after apply)
+      [31m-[0m[0m metadata         = {} [90m-> null[0m[0m
+      [33m~[0m[0m name             = "kill-billing-1de2aa8e41aa0ad32c613a515f04cb2a.zip" [33m->[0m[0m "kill-billing-092e1533fd65243fd8996e6b1f078b3b.zip" [31m# forces replacement[0m[0m
+      [33m~[0m[0m output_name      = "kill-billing-1de2aa8e41aa0ad32c613a515f04cb2a.zip" -> (known after apply)
+      [33m~[0m[0m self_link        = "https://www.googleapis.com/storage/v1/b/t-lexicon-231513-functions-source/o/kill-billing-1de2aa8e41aa0ad32c613a515f04cb2a.zip" -> (known after apply)
+      [33m~[0m[0m storage_class    = "STANDARD" -> (known after apply)
+      [31m-[0m[0m temporary_hold   = false [90m-> null[0m[0m
+        [90m# (2 unchanged attributes hidden)[0m[0m
+    }
+
+[1mPlan:[0m 15 to add, 3 to change, 3 to destroy.
+[0m
+Changes to Outputs:
+  [32m+[0m[0m alert_policy_iam_escalation     = (known after apply)
+  [32m+[0m[0m log_metric_iam_escalation       = "iam_privilege_escalation"
+[90m
+─────────────────────────────────────────────────────────────────────────────[0m
+
+Saved the plan to: tfplan.out
+
+To perform exactly these actions, run the following command to apply:
+    terraform apply "tfplan.out"
