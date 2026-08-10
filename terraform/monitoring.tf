@@ -306,7 +306,7 @@ resource "google_monitoring_dashboard" "pipeline" {
                       }
                     }
                   }
-                  plotType = "LINE"
+                  plotType   = "LINE"
                   targetAxis = "Y1"
                 }
               ]
@@ -344,7 +344,7 @@ resource "google_monitoring_dashboard" "pipeline" {
                       }
                     }
                   }
-                  plotType = "LINE"
+                  plotType   = "LINE"
                   targetAxis = "Y1"
                 }
               ]
@@ -382,7 +382,7 @@ resource "google_monitoring_dashboard" "pipeline" {
                       }
                     }
                   }
-                  plotType = "LINE"
+                  plotType   = "LINE"
                   targetAxis = "Y1"
                 }
               ]
@@ -419,7 +419,7 @@ resource "google_monitoring_dashboard" "pipeline" {
                       }
                     }
                   }
-                  plotType = "LINE"
+                  plotType   = "LINE"
                   targetAxis = "Y1"
                 }
               ]
@@ -523,7 +523,7 @@ resource "google_monitoring_dashboard" "pipeline" {
                       }
                     }
                   }
-                  plotType = "LINE"
+                  plotType   = "LINE"
                   targetAxis = "Y1"
                 }
               ]
@@ -561,7 +561,7 @@ resource "google_monitoring_dashboard" "pipeline" {
                       }
                     }
                   }
-                  plotType = "LINE"
+                  plotType   = "LINE"
                   targetAxis = "Y1"
                 }
               ]
@@ -706,7 +706,7 @@ resource "google_monitoring_dashboard" "weekly_summary" {
                       }
                     }
                   }
-                  plotType = "LINE"
+                  plotType   = "LINE"
                   targetAxis = "Y1"
                 }
               ]
@@ -802,8 +802,8 @@ resource "google_monitoring_dashboard" "weekly_summary" {
                       }
                     }
                   }
-                  plotType = "STACKED_AREA"
-                  targetAxis = "Y1"
+                  plotType       = "STACKED_AREA"
+                  targetAxis     = "Y1"
                   legendTemplate = "$${resource.labels.job_name} - Succès"
                 },
                 {
@@ -818,8 +818,8 @@ resource "google_monitoring_dashboard" "weekly_summary" {
                       }
                     }
                   }
-                  plotType = "STACKED_AREA"
-                  targetAxis = "Y1"
+                  plotType       = "STACKED_AREA"
+                  targetAxis     = "Y1"
                   legendTemplate = "$${resource.labels.job_name} - Échecs"
                 }
               ]

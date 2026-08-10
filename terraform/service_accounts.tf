@@ -5,7 +5,7 @@
 # 1. Service Account pour Cloud Scheduler
 resource "google_service_account" "scheduler" {
   account_id   = "sa-scheduler"
-  display_name = "Service Account for Cloud Scheduler"
+  display_name = "SA du Cloud Scheduler One Piece"
   description  = "Declenche le workflow"
 }
 
@@ -21,7 +21,7 @@ resource "google_project_iam_member" "scheduler_workflow_invoker" {
 # 2. Service Account pour Workflows
 resource "google_service_account" "workflow" {
   account_id   = "sa-workflow"
-  display_name = "Service Account for Workflows"
+  display_name = "SA du Workflow One Piece"
   description  = "Orchestre les jobs Cloud Run"
 }
 
@@ -48,50 +48,71 @@ resource "google_project_iam_member" "workflow_logging_writer" {
 
 # ============================================================
 
-# 3. Service Account pour jobs data (scraper + OCR)
-resource "google_service_account" "job_data" {
-  account_id   = "sa-job-data"
-  display_name = "Service Account for Data Jobs"
-  description  = "Scraper et OCR - acces BigQuery, GCS et secrets"
+# 3. Service Account pour job Scraper
+resource "google_service_account" "job_scraper" {
+  account_id   = "sa-job-scraper"
+  display_name = "SA du job Scraper One Piece"
+  description  = "Scraper - acces BigQuery et GCS"
 }
 
 # Permissions BigQuery
-resource "google_project_iam_member" "job_data_bq_editor" {
+resource "google_project_iam_member" "job_scraper_bq_editor" {
   project = var.project_id
   role    = "roles/bigquery.dataEditor"
-  member  = "serviceAccount:${google_service_account.job_data.email}"
+  member  = "serviceAccount:${google_service_account.job_scraper.email}"
 }
 
-resource "google_project_iam_member" "job_data_bq_job_user" {
+resource "google_project_iam_member" "job_scraper_bq_job_user" {
   project = var.project_id
-  role    = "roles/bigquery.jobUser"  # MOINDRE PRIVILÈGE : peut uniquement lancer des requêtes
-  member  = "serviceAccount:${google_service_account.job_data.email}"
+  role    = "roles/bigquery.jobUser"
+  member  = "serviceAccount:${google_service_account.job_scraper.email}"
 }
 
 # Permissions GCS - UNIQUEMENT sur le bucket onepiece-manga-images
 # MOINDRE PRIVILÈGE : Accès uniquement au bucket nécessaire, pas tous les buckets du projet
-resource "google_storage_bucket_iam_member" "job_data_manga_images" {
+resource "google_storage_bucket_iam_member" "job_scraper_manga_images" {
   bucket = google_storage_bucket.manga_images.name
   role   = "roles/storage.objectAdmin"
-  member = "serviceAccount:${google_service_account.job_data.email}"
-}
-
-# Permissions Secret Manager - MOINDRE PRIVILÈGE
-# job_data a accès UNIQUEMENT au secret Gemini (pour OCR)
-# Il NE PEUT PAS accéder au secret Anthropic (pas besoin!)
-resource "google_secret_manager_secret_iam_member" "job_data_gemini_access" {
-  secret_id = google_secret_manager_secret.gemini_api_key.secret_id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${google_service_account.job_data.email}"
+  member = "serviceAccount:${google_service_account.job_scraper.email}"
 }
 
 # ============================================================
 
-# 4. Service Account pour pipeline NLP
+# 4. Service Account pour job OCR
+resource "google_service_account" "job_ocr" {
+  account_id   = "sa-job-ocr"
+  display_name = "SA du job OCR One Piece"
+  description  = "OCR - acces BigQuery et GCS"
+}
+
+# Permissions BigQuery
+resource "google_project_iam_member" "job_ocr_bq_editor" {
+  project = var.project_id
+  role    = "roles/bigquery.dataEditor"
+  member  = "serviceAccount:${google_service_account.job_ocr.email}"
+}
+
+resource "google_project_iam_member" "job_ocr_bq_job_user" {
+  project = var.project_id
+  role    = "roles/bigquery.jobUser"
+  member  = "serviceAccount:${google_service_account.job_ocr.email}"
+}
+
+# Permissions GCS - UNIQUEMENT sur le bucket onepiece-manga-images
+# MOINDRE PRIVILÈGE : Accès uniquement au bucket nécessaire, pas tous les buckets du projet
+resource "google_storage_bucket_iam_member" "job_ocr_manga_images" {
+  bucket = google_storage_bucket.manga_images.name
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_service_account.job_ocr.email}"
+}
+
+# ============================================================
+
+# 5. Service Account pour pipeline NLP
 resource "google_service_account" "job_nlp" {
   account_id   = "sa-job-nlp"
-  display_name = "Service Account for NLP Pipeline"
-  description  = "Pipeline NLP - acces BigQuery et secrets"
+  display_name = "SA du job NLP One Piece"
+  description  = "Pipeline NLP - acces BigQuery et secret Anthropic"
 }
 
 # Permissions BigQuery
@@ -103,7 +124,7 @@ resource "google_project_iam_member" "job_nlp_bq_editor" {
 
 resource "google_project_iam_member" "job_nlp_bq_job_user" {
   project = var.project_id
-  role    = "roles/bigquery.jobUser"  # MOINDRE PRIVILÈGE : peut uniquement lancer des requêtes
+  role    = "roles/bigquery.jobUser" # MOINDRE PRIVILÈGE : peut uniquement lancer des requêtes
   member  = "serviceAccount:${google_service_account.job_nlp.email}"
 }
 
@@ -118,10 +139,10 @@ resource "google_secret_manager_secret_iam_member" "job_nlp_anthropic_access" {
 
 # ============================================================
 
-# 5. Service Account pour Dashboard (lecture seule)
+# 6. Service Account pour Dashboard (lecture seule)
 resource "google_service_account" "dashboard" {
   account_id   = "sa-dashboard"
-  display_name = "Service Account for Dashboard"
+  display_name = "SA du Dashboard One Piece"
   description  = "Dashboard - lecture seule BigQuery"
 }
 
@@ -134,13 +155,13 @@ resource "google_project_iam_member" "dashboard_bq_viewer" {
 
 resource "google_project_iam_member" "dashboard_bq_job_user" {
   project = var.project_id
-  role    = "roles/bigquery.jobUser"  # MOINDRE PRIVILÈGE : peut uniquement lancer des requêtes
+  role    = "roles/bigquery.jobUser" # MOINDRE PRIVILÈGE : peut uniquement lancer des requêtes
   member  = "serviceAccount:${google_service_account.dashboard.email}"
 }
 
 # ============================================================
 
-# 6. Service Account pour Budget Killer Function
+# 7. Service Account pour Budget Killer Function
 resource "google_service_account" "budget_killer" {
   account_id   = "sa-budget-killer"
   display_name = "Service Account for Budget Killer Function"

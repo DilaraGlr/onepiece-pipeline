@@ -60,8 +60,8 @@ output "budget_topic" {
 
 # ============================================================
 # COMMENTÉ : dépend de google_billing_budget.project_budget qui est
-# désactivé dans budget.tf (droits sur le billing account externe de
-# Karim non disponibles pour le SA Cloud Build).
+# désactivé dans budget.tf (droits sur le billing account externe
+# non disponibles pour le SA Cloud Build).
 # ============================================================
 # output "budget_name" {
 #   value       = google_billing_budget.project_budget.display_name
