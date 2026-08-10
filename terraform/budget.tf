@@ -36,7 +36,7 @@ resource "google_pubsub_subscription" "budget_alerts_sub" {
 
 # ============================================================
 # COMMENTÉ : nécessite des droits sur le billing account externe
-# (celui de Karim). Le SA Cloud Build n'a pas ces droits et ne doit
+# Le SA Cloud Build n'a pas ces droits et ne doit
 # pas les avoir (compte prêté, pas le nôtre).
 # Cette ressource doit être créée MANUELLEMENT en local par un compte
 # ayant les droits sur ce billing account.

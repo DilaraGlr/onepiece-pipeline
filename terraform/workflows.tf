@@ -8,9 +8,9 @@
 # 3. NLP → Analyse les dialogues et identifie les personnages
 
 resource "google_workflows_workflow" "onepiece" {
-  name            = "onepiece-workflow"
-  region          = var.region
-  description     = "Orchestre l'execution sequentielle: Scraper -> OCR -> NLP"
+  name        = "onepiece-workflow"
+  region      = var.region
+  description = "Orchestre l'execution sequentielle: Scraper -> OCR -> NLP"
 
   # Service account dédié pour le workflow
   # Permissions: run.invoker (lancer les jobs) + run.viewer (voir leur statut)

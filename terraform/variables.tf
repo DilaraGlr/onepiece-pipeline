@@ -35,7 +35,7 @@ variable "image_tag" {
   #
   # Trouvez le tag actuellement déployé via :
   #   gcloud run services describe onepiece-dashboard --region=europe-west1 --format="value(spec.template.spec.containers[0].image)"
-  default     = "f10b3f4"  # Tag actuellement en production (fix CI/CD billing_account_id)
+  default = "f10b3f4" # Tag actuellement en production (fix CI/CD billing_account_id)
 }
 
 variable "billing_account_id" {
@@ -51,5 +51,5 @@ variable "billing_account_id" {
 variable "monthly_budget_amount" {
   description = "Montant du budget mensuel en EUR (ou USD selon votre devise)"
   type        = string
-  default     = "50"  # 50 EUR par défaut - ajustez selon vos besoins
+  default     = "50" # 50 EUR par défaut - ajustez selon vos besoins
 }

@@ -12,10 +12,10 @@ terraform {
 }
 
 provider "google" {
-  project                     = var.project_id
-  region                      = var.region
-  user_project_override       = true
-  billing_project             = var.project_id
+  project               = var.project_id
+  region                = var.region
+  user_project_override = true
+  billing_project       = var.project_id
 }
 
 # ============================================================
@@ -52,12 +52,12 @@ resource "google_bigquery_table" "chapters" {
   }
 
   schema = jsonencode([
-    { name = "scraped_at",     type = "TIMESTAMP" },
-    { name = "chapter_number", type = "INTEGER"   },
-    { name = "source",         type = "STRING"    },
-    { name = "language",       type = "STRING"    },
-    { name = "url",            type = "STRING"    },
-    { name = "image_count",    type = "INTEGER"   }
+    { name = "scraped_at", type = "TIMESTAMP" },
+    { name = "chapter_number", type = "INTEGER" },
+    { name = "source", type = "STRING" },
+    { name = "language", type = "STRING" },
+    { name = "url", type = "STRING" },
+    { name = "image_count", type = "INTEGER" }
   ])
 }
 
@@ -71,12 +71,12 @@ resource "google_bigquery_table" "dialogues" {
   }
 
   schema = jsonencode([
-    { name = "chapter_number",  type = "INTEGER"   },
-    { name = "page_number",     type = "INTEGER"   },
-    { name = "image_url",       type = "STRING"    },
-    { name = "gcs_path",        type = "STRING"    },
-    { name = "extracted_text",  type = "STRING"    },
-    { name = "processed_at",    type = "TIMESTAMP" }
+    { name = "chapter_number", type = "INTEGER" },
+    { name = "page_number", type = "INTEGER" },
+    { name = "image_url", type = "STRING" },
+    { name = "gcs_path", type = "STRING" },
+    { name = "extracted_text", type = "STRING" },
+    { name = "processed_at", type = "TIMESTAMP" }
   ])
 }
 
@@ -91,11 +91,11 @@ resource "google_bigquery_table" "speakers" {
 
   schema = jsonencode([
     { name = "chapter_number", type = "INTEGER" },
-    { name = "page_number",    type = "INTEGER" },
-    { name = "speaker",        type = "STRING"  },
-    { name = "phrase",         type = "STRING"  },
-    { name = "luffy_says_it",  type = "BOOLEAN" },
-    { name = "about_luffy",    type = "BOOLEAN" }
+    { name = "page_number", type = "INTEGER" },
+    { name = "speaker", type = "STRING" },
+    { name = "phrase", type = "STRING" },
+    { name = "luffy_says_it", type = "BOOLEAN" },
+    { name = "about_luffy", type = "BOOLEAN" }
   ])
 }
 
@@ -186,8 +186,7 @@ resource "google_cloud_run_v2_job" "scraper" {
       # Ce compte a UNIQUEMENT les permissions pour :
       # - Écrire dans BigQuery (table chapters)
       # - Écrire dans GCS (bucket manga_images)
-      # - Lire le secret Gemini (pour l'API OCR)
-      service_account = google_service_account.job_data.email
+      service_account = google_service_account.job_scraper.email
 
       containers {
         image = "europe-west1-docker.pkg.dev/${var.project_id}/onepiece-repo/scraper:${var.image_tag}"
@@ -218,11 +217,10 @@ resource "google_cloud_run_v2_job" "ocr" {
   template {
     template {
       # Service account dédié pour l'OCR
-      # Ce compte a les mêmes permissions que le scraper car il :
-      # - Lit les images depuis GCS
-      # - Écrit les textes extraits dans BigQuery (table dialogues)
-      # - Utilise l'API Gemini (secret gemini-api-key)
-      service_account = google_service_account.job_data.email
+      # Ce compte a UNIQUEMENT les permissions pour :
+      # - Lire/écrire dans GCS (bucket manga_images)
+      # - Écrire dans BigQuery (table dialogues)
+      service_account = google_service_account.job_ocr.email
 
       containers {
         image = "europe-west1-docker.pkg.dev/${var.project_id}/onepiece-repo/scraper:${var.image_tag}"
@@ -336,7 +334,7 @@ resource "google_cloud_run_service_iam_member" "dashboard_restricted" {
 
 resource "google_cloud_scheduler_job" "weekly" {
   name     = "onepiece-scheduler"
-  schedule = "0 9 * * 1"  # Tous les lundis à 9h00
+  schedule = "0 9 * * 1" # Tous les lundis à 9h00
   region   = var.region
 
   http_target {
