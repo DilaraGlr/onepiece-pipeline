@@ -119,12 +119,37 @@ resource "google_project_iam_member" "cloudbuild_storage" {
 # ============================================================
 # SECRET MANAGER
 # ============================================================
+# Custom role restreint pour la gestion des secrets (metadata uniquement)
+# MOINDRE PRIVILÈGE (Chapitre 2) :
+# - Permet de créer/gérer la structure des secrets (nom, réplication, labels, IAM)
+# - INTERDIT explicitement l'accès aux valeurs secrètes :
+#   * secretmanager.versions.add (créer versions avec valeur) → EXCLUS
+#   * secretmanager.versions.access (lire valeur) → EXCLUS
+#   * secretmanager.versions.destroy (détruire versions) → EXCLUS
+# - Justification : l'audit a prouvé que sa-cloudbuild ne fait QUE des
+#   opérations Terraform sur la metadata, jamais de lecture/écriture de valeurs
+resource "google_project_iam_custom_role" "secretmanager_metadata_manager" {
+  role_id     = "secretmanager_metadata_manager"
+  title       = "Secret Manager Metadata Manager"
+  description = "Permet de créer/gérer secrets et IAM sans accès aux valeurs secrètes"
+
+  permissions = [
+    "secretmanager.secrets.create",
+    "secretmanager.secrets.get",
+    "secretmanager.secrets.update",
+    "secretmanager.secrets.delete",
+    "secretmanager.secrets.list",
+    "secretmanager.secrets.setIamPolicy",
+    "secretmanager.secrets.getIamPolicy",
+  ]
+}
+
 # Nécessaire pour : terraform apply sur google_secret_manager_secret (anthropic-api-key,
-# gemini-api-key)
-# Permet de créer les secrets (pas d'accès aux valeurs secrètes)
+# gemini-api-key) et google_secret_manager_secret_iam_member (service_accounts.tf)
+# Permet de créer les secrets (metadata uniquement, pas d'accès aux valeurs secrètes)
 resource "google_project_iam_member" "cloudbuild_secretmanager" {
   project = var.project_id
-  role    = "roles/secretmanager.admin"
+  role    = google_project_iam_custom_role.secretmanager_metadata_manager.id
   member  = "serviceAccount:${google_service_account.cloudbuild.email}"
 }
 
