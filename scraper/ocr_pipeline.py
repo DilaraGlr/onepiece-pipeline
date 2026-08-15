@@ -1,5 +1,7 @@
 import io
+import json
 import os
+import sys
 import time
 from datetime import datetime, timezone
 
@@ -158,6 +160,33 @@ def extract_text_from_gcs(vision_client, gcs_path):
 
 
 # ============================================================
+# ÉCRIRE LE STATUT DU JOB DANS GCS
+# ============================================================
+
+def write_status_to_gcs(status, records_processed, records_failed, error_message=None):
+    """Écrit un fichier status.json dans GCS pour le workflow."""
+    status_data = {
+        "status": status,
+        "records_processed": records_processed,
+        "records_failed": records_failed,
+        "error_message": error_message,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+    try:
+        storage_client = storage.Client(project=PROJECT_ID)
+        bucket = storage_client.bucket(BUCKET_NAME)
+        blob = bucket.blob("_status/ocr-status.json")
+        blob.upload_from_string(
+            json.dumps(status_data, indent=2),
+            content_type="application/json",
+        )
+        print(f"✅ Statut écrit dans gs://{BUCKET_NAME}/_status/ocr-status.json")
+    except Exception as e:
+        print(f"⚠️  Impossible d'écrire le statut dans GCS : {e}")
+
+
+# ============================================================
 # PROGRAMME PRINCIPAL
 # ============================================================
 
@@ -166,74 +195,94 @@ def main():
     print("🔍  One Piece — OCR Pipeline")
     print("=" * 50)
 
-    limit = int(os.getenv("CHAPTER_LIMIT", "0"))
+    records_processed = 0
+    records_failed = 0
+    error_message = None
 
-    bq_client = bigquery.Client(project=PROJECT_ID)
-    storage_client = storage.Client(project=PROJECT_ID)
-    vision_client = vision.ImageAnnotatorClient()
+    try:
+        limit = int(os.getenv("CHAPTER_LIMIT", "0"))
 
-    create_dialogues_table_if_not_exists(bq_client)
+        bq_client = bigquery.Client(project=PROJECT_ID)
+        storage_client = storage.Client(project=PROJECT_ID)
+        vision_client = vision.ImageAnnotatorClient()
 
-    processed = get_processed_chapters(bq_client)
-    all_chapters = get_all_chapters(bq_client)
+        create_dialogues_table_if_not_exists(bq_client)
 
-    to_process = [
-        (num, url) for num, url in all_chapters
-        if num not in processed
-    ]
+        processed = get_processed_chapters(bq_client)
+        all_chapters = get_all_chapters(bq_client)
 
-    if limit > 0:
-        to_process = to_process[:limit]
-        print(f"\n⚙️  Mode test : {limit} chapitres seulement")
+        to_process = [
+            (num, url) for num, url in all_chapters
+            if num not in processed
+        ]
 
-    print(f"\n📚 {len(to_process)} chapitres à traiter")
+        if limit > 0:
+            to_process = to_process[:limit]
+            print(f"\n⚙️  Mode test : {limit} chapitres seulement")
 
-    for chapter_number, chapter_url in to_process:
-        print(f"\n📖 Chapitre {chapter_number}...")
+        if not to_process:
+            print("\n📚 Aucun nouveau chapitre à traiter")
+            write_status_to_gcs("success_empty", 0, 0)
+            return
 
-        images = get_chapter_images(chapter_url)
-        if not images:
-            print("  ⚠️ Aucune image trouvée, on passe")
-            continue
+        print(f"\n📚 {len(to_process)} chapitres à traiter")
 
-        rows = []
-        for page_number, image_url in enumerate(images, start=1):
-            print(f"  🖼️  Page {page_number}/{len(images)}...")
+        for chapter_number, chapter_url in to_process:
+            print(f"\n📖 Chapitre {chapter_number}...")
 
-            gcs_path = upload_image_to_gcs(
-                storage_client,
-                image_url,
-                chapter_number,
-                page_number,
-            )
-            if not gcs_path:
+            images = get_chapter_images(chapter_url)
+            if not images:
+                print("  ⚠️ Aucune image trouvée, on passe")
                 continue
 
-            text = extract_text_from_gcs(vision_client, gcs_path)
+            rows = []
+            for page_number, image_url in enumerate(images, start=1):
+                print(f"  🖼️  Page {page_number}/{len(images)}...")
 
-            rows.append({
-                "chapter_number": chapter_number,
-                "page_number": page_number,
-                "image_url": image_url,
-                "gcs_path": gcs_path,
-                "extracted_text": text,
-                "processed_at": datetime.now(timezone.utc).isoformat(),
-            })
+                gcs_path = upload_image_to_gcs(
+                    storage_client,
+                    image_url,
+                    chapter_number,
+                    page_number,
+                )
+                if not gcs_path:
+                    records_failed += 1
+                    continue
 
-            time.sleep(0.5)
+                text = extract_text_from_gcs(vision_client, gcs_path)
 
-        if rows:
-            errors = bq_client.insert_rows_json(
-                DIALOGUES_TABLE, rows
-            )
-            if errors:
-                print(f"  ❌ Erreur BigQuery : {errors}")
-            else:
-                print(f"  ✅ {len(rows)} pages chargées dans BigQuery")
+                rows.append({
+                    "chapter_number": chapter_number,
+                    "page_number": page_number,
+                    "image_url": image_url,
+                    "gcs_path": gcs_path,
+                    "extracted_text": text,
+                    "processed_at": datetime.now(timezone.utc).isoformat(),
+                })
 
-        time.sleep(1)
+                time.sleep(0.5)
 
-    print("\n🏴‍☠️  OCR Pipeline terminé !")
+            if rows:
+                errors = bq_client.insert_rows_json(
+                    DIALOGUES_TABLE, rows
+                )
+                if errors:
+                    print(f"  ❌ Erreur BigQuery : {errors}")
+                    records_failed += len(rows)
+                else:
+                    print(f"  ✅ {len(rows)} pages chargées dans BigQuery")
+                    records_processed += len(rows)
+
+            time.sleep(1)
+
+        print(f"\n🏴‍☠️  OCR Pipeline terminé ! ({records_processed} pages traitées, {records_failed} échecs)")
+        write_status_to_gcs("success", records_processed, records_failed)
+
+    except Exception as e:
+        error_message = f"Erreur critique OCR : {str(e)}"
+        print(f"\n❌ {error_message}")
+        write_status_to_gcs("error", records_processed, records_failed, error_message)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -1,10 +1,12 @@
 import json
 import os
+import sys
 import tempfile
 import time
+from datetime import datetime, timezone
 
 import anthropic
-from google.cloud import bigquery, secretmanager
+from google.cloud import bigquery, secretmanager, storage
 
 # ============================================================
 # CONFIGURATION
@@ -143,6 +145,34 @@ Si aucune mention claire : {{"mentions": []}}"""
 
 
 # ============================================================
+# ÉCRIRE LE STATUT DU JOB DANS GCS
+# ============================================================
+
+def write_status_to_gcs(status, records_processed, records_failed, error_message=None):
+    """Écrit un fichier status.json dans GCS pour le workflow."""
+    bucket_name = "onepiece-manga-images-tlex"
+    status_data = {
+        "status": status,
+        "records_processed": records_processed,
+        "records_failed": records_failed,
+        "error_message": error_message,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+    try:
+        storage_client = storage.Client(project=PROJECT_ID)
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob("_status/nlp-status.json")
+        blob.upload_from_string(
+            json.dumps(status_data, indent=2),
+            content_type="application/json",
+        )
+        print(f"✅ Statut écrit dans gs://{bucket_name}/_status/nlp-status.json")
+    except Exception as e:
+        print(f"⚠️  Impossible d'écrire le statut dans GCS : {e}")
+
+
+# ============================================================
 # PROGRAMME PRINCIPAL
 # ============================================================
 
@@ -151,82 +181,103 @@ def main():
     print("🧠  One Piece — NLP Pipeline (Claude Haiku)")
     print("=" * 50)
 
-    api_key = get_anthropic_api_key()
-    anthropic_client = anthropic.Anthropic(api_key=api_key)
-    bq_client = bigquery.Client(project=PROJECT_ID)
+    records_processed = 0
+    records_failed = 0
+    error_message = None
 
-    create_speakers_table_if_not_exists(bq_client)
+    try:
+        api_key = get_anthropic_api_key()
+        anthropic_client = anthropic.Anthropic(api_key=api_key)
+        bq_client = bigquery.Client(project=PROJECT_ID)
 
-    processed = get_processed_pages(bq_client)
-    pages = get_relevant_pages(bq_client)
+        create_speakers_table_if_not_exists(bq_client)
 
-    to_process = [
-        (ch, pg, txt) for ch, pg, txt in pages
-        if (ch, pg) not in processed
-    ]
+        processed = get_processed_pages(bq_client)
+        pages = get_relevant_pages(bq_client)
 
-    print(f"\n📚 {len(to_process)} pages à analyser")
+        to_process = [
+            (ch, pg, txt) for ch, pg, txt in pages
+            if (ch, pg) not in processed
+        ]
 
-    rows = []
-    for chapter_number, page_number, text in to_process:
-        print(f"  🧠 Chapitre {chapter_number} page {page_number}...")
+        if not to_process:
+            print("\n📚 Aucune nouvelle page à analyser")
+            write_status_to_gcs("success_empty", 0, 0)
+            return
 
-        try:
-            result = analyze_page_with_claude(
-                anthropic_client, text, chapter_number, page_number
-            )
+        print(f"\n📚 {len(to_process)} pages à analyser")
 
-            for mention in result.get("mentions", []):
-                rows.append({
-                    "chapter_number": chapter_number,
-                    "page_number": page_number,
-                    "speaker": mention.get("speaker", "inconnu"),
-                    "phrase": mention.get("phrase", ""),
-                    "luffy_says_it": mention.get("luffy_says_it", False),
-                    "about_luffy": mention.get("about_luffy", False),
-                })
+        rows = []
+        for chapter_number, page_number, text in to_process:
+            print(f"  🧠 Chapitre {chapter_number} page {page_number}...")
 
-        except Exception as e:
-            print(f"  ⚠️ Erreur page {page_number} : {e}")
-
-        time.sleep(0.3)
-
-    # Charger toutes les lignes en batch avec un load job (gratuit et optimisé pour batch)
-    if rows:
-        print(f"\n📦 Chargement de {len(rows)} lignes via load job...")
-
-        # Écrire les données dans un fichier temporaire (newline-delimited JSON)
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-            for row in rows:
-                f.write(json.dumps(row) + '\n')
-            temp_file = f.name
-
-        try:
-            # Configurer le load job
-            job_config = bigquery.LoadJobConfig(
-                source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
-                write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
-            )
-
-            # Charger depuis le fichier temporaire
-            with open(temp_file, 'rb') as source_file:
-                job = bq_client.load_table_from_file(
-                    source_file,
-                    SPEAKERS_TABLE,
-                    job_config=job_config
+            try:
+                result = analyze_page_with_claude(
+                    anthropic_client, text, chapter_number, page_number
                 )
 
-            # Attendre que le job se termine
-            job.result()
-            print(f"  ✅ {len(rows)} lignes chargées avec succès")
+                for mention in result.get("mentions", []):
+                    rows.append({
+                        "chapter_number": chapter_number,
+                        "page_number": page_number,
+                        "speaker": mention.get("speaker", "inconnu"),
+                        "phrase": mention.get("phrase", ""),
+                        "luffy_says_it": mention.get("luffy_says_it", False),
+                        "about_luffy": mention.get("about_luffy", False),
+                    })
 
-        except Exception as e:
-            print(f"  ❌ Erreur lors du chargement : {e}")
-        finally:
-            # Nettoyer le fichier temporaire
-            os.unlink(temp_file)
+            except Exception as e:
+                print(f"  ⚠️ Erreur page {page_number} : {e}")
+                records_failed += 1
 
-    print("\n🏴‍☠️  NLP Pipeline terminé !")
+            time.sleep(0.3)
+
+        # Charger toutes les lignes en batch avec un load job (gratuit et optimisé pour batch)
+        if rows:
+            print(f"\n📦 Chargement de {len(rows)} lignes via load job...")
+
+            # Écrire les données dans un fichier temporaire (newline-delimited JSON)
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+                for row in rows:
+                    f.write(json.dumps(row) + '\n')
+                temp_file = f.name
+
+            try:
+                # Configurer le load job
+                job_config = bigquery.LoadJobConfig(
+                    source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
+                    write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
+                )
+
+                # Charger depuis le fichier temporaire
+                with open(temp_file, 'rb') as source_file:
+                    job = bq_client.load_table_from_file(
+                        source_file,
+                        SPEAKERS_TABLE,
+                        job_config=job_config
+                    )
+
+                # Attendre que le job se termine
+                job.result()
+                print(f"  ✅ {len(rows)} lignes chargées avec succès")
+                records_processed = len(rows)
+
+            except Exception as e:
+                error_msg = f"Erreur lors du chargement BigQuery : {e}"
+                print(f"  ❌ {error_msg}")
+                raise Exception(error_msg)
+            finally:
+                # Nettoyer le fichier temporaire
+                os.unlink(temp_file)
+
+        print(f"\n🏴‍☠️  NLP Pipeline terminé ! ({records_processed} pages traitées, {records_failed} échecs)")
+        write_status_to_gcs("success", records_processed, records_failed)
+
+    except Exception as e:
+        error_message = f"Erreur critique NLP : {str(e)}"
+        print(f"\n❌ {error_message}")
+        write_status_to_gcs("error", records_processed, records_failed, error_message)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

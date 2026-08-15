@@ -25,13 +25,31 @@ main:
           - check_if_done:
               switch:
                 - condition: ${default(map.get(scraper_status.body, "done"), false) == true}
-                  next: launch_ocr
+                  next: read_scraper_status
               next: sleep_scraper
           - sleep_scraper:
               call: sys.sleep
               args:
                 seconds: 30
               next: check_scraper
+
+    - read_scraper_status:
+        call: http.get
+        args:
+          url: https://storage.googleapis.com/storage/v1/b/onepiece-manga-images-tlex/o/_status%2Fscraper-status.json?alt=media
+          auth:
+            type: OAuth2
+        result: scraper_status_file
+
+    - validate_scraper:
+        switch:
+          - condition: ${scraper_status_file.body.status == "error"}
+            raise: ${"Scraper a échoué: " + default(scraper_status_file.body.error_message, "erreur inconnue")}
+          - condition: ${scraper_status_file.body.status == "success_empty"}
+            next: done_empty_pipeline
+          - condition: ${scraper_status_file.body.status == "success" and scraper_status_file.body.records_processed > 0}
+            next: launch_ocr
+        raise: "Scraper terminé mais status invalide ou 0 enregistrements traités"
 
     - launch_ocr:
         call: http.post
@@ -53,13 +71,31 @@ main:
           - check_ocr_done:
               switch:
                 - condition: ${default(map.get(ocr_status.body, "done"), false) == true}
-                  next: launch_nlp
+                  next: read_ocr_status
               next: sleep_ocr
           - sleep_ocr:
               call: sys.sleep
               args:
                 seconds: 30
               next: check_ocr
+
+    - read_ocr_status:
+        call: http.get
+        args:
+          url: https://storage.googleapis.com/storage/v1/b/onepiece-manga-images-tlex/o/_status%2Focr-status.json?alt=media
+          auth:
+            type: OAuth2
+        result: ocr_status_file
+
+    - validate_ocr:
+        switch:
+          - condition: ${ocr_status_file.body.status == "error"}
+            raise: ${"OCR a échoué: " + default(ocr_status_file.body.error_message, "erreur inconnue")}
+          - condition: ${ocr_status_file.body.status == "success_empty"}
+            next: done_empty_pipeline
+          - condition: ${ocr_status_file.body.status == "success" and ocr_status_file.body.records_processed > 0}
+            next: launch_nlp
+        raise: "OCR terminé mais status invalide ou 0 enregistrements traités"
 
     - launch_nlp:
         call: http.post
@@ -81,7 +117,7 @@ main:
           - check_nlp_done:
               switch:
                 - condition: ${default(map.get(nlp_status.body, "done"), false) == true}
-                  next: done
+                  next: read_nlp_status
               next: sleep_nlp
           - sleep_nlp:
               call: sys.sleep
@@ -89,5 +125,26 @@ main:
                 seconds: 30
               next: check_nlp
 
+    - read_nlp_status:
+        call: http.get
+        args:
+          url: https://storage.googleapis.com/storage/v1/b/onepiece-manga-images-tlex/o/_status%2Fnlp-status.json?alt=media
+          auth:
+            type: OAuth2
+        result: nlp_status_file
+
+    - validate_nlp:
+        switch:
+          - condition: ${nlp_status_file.body.status == "error"}
+            raise: ${"NLP a échoué: " + default(nlp_status_file.body.error_message, "erreur inconnue")}
+          - condition: ${nlp_status_file.body.status == "success_empty"}
+            next: done_empty_pipeline
+          - condition: ${nlp_status_file.body.status == "success" and nlp_status_file.body.records_processed > 0}
+            next: done
+        raise: "NLP terminé mais status invalide ou 0 enregistrements traités"
+
     - done:
-        return: "Pipeline One Piece terminé avec succès !"
+        return: "Pipeline One Piece terminé avec succès ! Données traitées à toutes les étapes."
+
+    - done_empty_pipeline:
+        return: "Pipeline One Piece terminé : aucune nouvelle donnée à traiter (situation normale)."
