@@ -135,7 +135,7 @@ def load_to_bigquery(chapters):
     merge_job.result()
 
     # Récupérer le nombre de lignes insérées/mises à jour
-    stats = merge_job._properties.get('statistics', {}).get('dmlStats', {})
+    stats = merge_job._properties.get('statistics', {}).get('query', {}).get('dmlStats', {})
     inserted = stats.get('insertedRowCount', 0)
     updated = stats.get('updatedRowCount', 0)
 
