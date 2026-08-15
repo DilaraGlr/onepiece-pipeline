@@ -180,6 +180,18 @@ def main():
 
     if not chapters_to_scrape:
         print("\n✅ Aucun nouveau chapitre à scraper !")
+        # Écrire un output.json VIDE pour éviter qu'un vieux fichier soit relu
+        output = {
+            "manga": "One Piece",
+            "source": "onepiecescan.fr",
+            "language": "fr",
+            "total_chapters_available": len(all_chapters),
+            "scraped_at": datetime.now(timezone.utc).isoformat(),
+            "chapters": [],  # Liste vide explicite
+        }
+        with open("output.json", "w", encoding="utf-8") as f:
+            json.dump(output, f, ensure_ascii=False, indent=2)
+        print("💾 output.json écrit avec 0 chapitres (évite la relecture d'un vieux fichier)")
         return
 
     print(
