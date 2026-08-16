@@ -16,6 +16,7 @@ from google.cloud import bigquery, storage, vision
 PROJECT_ID = "t-lexicon-231513"
 TABLE_REF = "t-lexicon-231513.onepiece.chapters"
 DIALOGUES_TABLE = "t-lexicon-231513.onepiece.dialogues"
+FAILED_PAGES_TABLE = "t-lexicon-231513.onepiece.failed_pages"
 BUCKET_NAME = "onepiece-manga-images-tlex"
 
 HEADERS = {
@@ -111,6 +112,12 @@ def get_chapter_images(chapter_url):
 def upload_image_to_gcs(
     storage_client, image_url, chapter_number, page_number
 ):
+    """
+    Télécharge une image et l'upload dans GCS.
+    Retourne: (gcs_path, error_message)
+    - (gcs_path, None) en cas de succès
+    - (None, error_message) en cas d'erreur
+    """
     try:
         response = requests.get(
             image_url,
@@ -118,7 +125,7 @@ def upload_image_to_gcs(
             timeout=30,
         )
         if response.status_code != 200:
-            return None
+            return (None, f"HTTP {response.status_code} lors du téléchargement")
 
         ext = "jpg" if "jpg" in image_url.lower() else "png"
         gcs_path = (
@@ -131,11 +138,11 @@ def upload_image_to_gcs(
             io.BytesIO(response.content),
             content_type=f"image/{ext}",
         )
-        return gcs_path
+        return (gcs_path, None)
 
     except Exception as e:
         print(f"  ⚠️ Erreur upload GCS : {e}")
-        return None
+        return (None, f"Erreur GCS upload: {str(e)}")
 
 
 # ============================================================
@@ -198,6 +205,7 @@ def main():
     records_processed = 0
     records_failed = 0
     error_message = None
+    failed_pages_records = []  # Dead-letter table pour erreurs item-level
 
     try:
         limit = int(os.getenv("CHAPTER_LIMIT", "0"))
@@ -233,13 +241,23 @@ def main():
             images = get_chapter_images(chapter_url)
             if not images:
                 print("  ⚠️ Aucune image trouvée, on passe")
+                # Enregistrer l'erreur chapter-level (page_number = None)
+                failed_pages_records.append({
+                    "chapter_number": chapter_number,
+                    "page_number": None,
+                    "pipeline_step": "ocr",
+                    "error_type": "no_images_found",
+                    "error_message": "Aucune image trouvée pour ce chapitre",
+                    "source_url": chapter_url,
+                    "failed_at": datetime.now(timezone.utc).isoformat(),
+                })
                 continue
 
             rows = []
             for page_number, image_url in enumerate(images, start=1):
                 print(f"  🖼️  Page {page_number}/{len(images)}...")
 
-                gcs_path = upload_image_to_gcs(
+                gcs_path, error_msg = upload_image_to_gcs(
                     storage_client,
                     image_url,
                     chapter_number,
@@ -247,6 +265,17 @@ def main():
                 )
                 if not gcs_path:
                     records_failed += 1
+                    # Enregistrer l'erreur de téléchargement/upload
+                    error_type = "image_download_failed" if "HTTP" in error_msg else "gcs_upload_failed"
+                    failed_pages_records.append({
+                        "chapter_number": chapter_number,
+                        "page_number": page_number,
+                        "pipeline_step": "ocr",
+                        "error_type": error_type,
+                        "error_message": error_msg,
+                        "source_url": image_url,
+                        "failed_at": datetime.now(timezone.utc).isoformat(),
+                    })
                     continue
 
                 text = extract_text_from_gcs(vision_client, gcs_path)
@@ -269,11 +298,33 @@ def main():
                 if errors:
                     print(f"  ❌ Erreur BigQuery : {errors}")
                     records_failed += len(rows)
+                    # Décomposer l'erreur batch en lignes individuelles
+                    for row in rows:
+                        failed_pages_records.append({
+                            "chapter_number": row["chapter_number"],
+                            "page_number": row["page_number"],
+                            "pipeline_step": "ocr",
+                            "error_type": "bigquery_insert_failed",
+                            "error_message": str(errors),
+                            "source_url": row["gcs_path"],
+                            "failed_at": datetime.now(timezone.utc).isoformat(),
+                        })
                 else:
                     print(f"  ✅ {len(rows)} pages chargées dans BigQuery")
                     records_processed += len(rows)
 
             time.sleep(1)
+
+        # Insérer toutes les erreurs dans la dead-letter table
+        if failed_pages_records:
+            print(f"\n📝 Enregistrement de {len(failed_pages_records)} échecs dans failed_pages...")
+            bq_errors = bq_client.insert_rows_json(
+                FAILED_PAGES_TABLE, failed_pages_records
+            )
+            if bq_errors:
+                print(f"  ⚠️ Erreur lors de l'écriture dans failed_pages : {bq_errors}")
+            else:
+                print(f"  ✅ {len(failed_pages_records)} échecs enregistrés")
 
         print(f"\n🏴‍☠️  OCR Pipeline terminé ! ({records_processed} pages traitées, {records_failed} échecs)")
         write_status_to_gcs("success", records_processed, records_failed)
