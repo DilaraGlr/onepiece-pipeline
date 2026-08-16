@@ -15,6 +15,7 @@ from google.cloud import bigquery, secretmanager, storage
 PROJECT_ID = "t-lexicon-231513"
 DIALOGUES_TABLE = "t-lexicon-231513.onepiece.dialogues"
 SPEAKERS_TABLE = "t-lexicon-231513.onepiece.speakers"
+FAILED_PAGES_TABLE = "t-lexicon-231513.onepiece.failed_pages"
 SECRET_NAME = (
     "projects/t-lexicon-231513/secrets/anthropic-api-key/versions/latest"
 )
@@ -184,6 +185,7 @@ def main():
     records_processed = 0
     records_failed = 0
     error_message = None
+    failed_pages_records = []  # Dead-letter table pour erreurs item-level
 
     try:
         api_key = get_anthropic_api_key()
@@ -229,6 +231,17 @@ def main():
             except Exception as e:
                 print(f"  ⚠️ Erreur page {page_number} : {e}")
                 records_failed += 1
+                # Enregistrer l'erreur Claude API ou JSON parse
+                error_type = "json_parse_error" if "JSON" in str(e) or "json" in str(e).lower() else "claude_api_error"
+                failed_pages_records.append({
+                    "chapter_number": chapter_number,
+                    "page_number": page_number,
+                    "pipeline_step": "nlp",
+                    "error_type": error_type,
+                    "error_message": str(e),
+                    "source_url": None,  # Pas de GCS path disponible dans NLP
+                    "failed_at": datetime.now(timezone.utc).isoformat(),
+                })
 
             time.sleep(0.3)
 
@@ -269,6 +282,17 @@ def main():
             finally:
                 # Nettoyer le fichier temporaire
                 os.unlink(temp_file)
+
+        # Insérer toutes les erreurs dans la dead-letter table
+        if failed_pages_records:
+            print(f"\n📝 Enregistrement de {len(failed_pages_records)} échecs dans failed_pages...")
+            bq_errors = bq_client.insert_rows_json(
+                FAILED_PAGES_TABLE, failed_pages_records
+            )
+            if bq_errors:
+                print(f"  ⚠️ Erreur lors de l'écriture dans failed_pages : {bq_errors}")
+            else:
+                print(f"  ✅ {len(failed_pages_records)} échecs enregistrés")
 
         print(f"\n🏴‍☠️  NLP Pipeline terminé ! ({records_processed} pages traitées, {records_failed} échecs)")
         write_status_to_gcs("success", records_processed, records_failed)
