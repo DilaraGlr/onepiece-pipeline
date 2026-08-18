@@ -9,6 +9,8 @@ import requests
 from bs4 import BeautifulSoup
 from google.cloud import bigquery, storage, vision
 
+from utils import retry_with_backoff
+
 # ============================================================
 # CONFIGURATION
 # ============================================================
@@ -150,15 +152,29 @@ def upload_image_to_gcs(
 # ============================================================
 
 def extract_text_from_gcs(vision_client, gcs_path):
-    gcs_uri = f"gs://{BUCKET_NAME}/{gcs_path}"
-    image = vision.Image(
-        source=vision.ImageSource(gcs_image_uri=gcs_uri)
-    )
-    response = vision_client.text_detection(image=image)
+    """
+    Extrait le texte d'une image dans GCS via Cloud Vision API.
+    Utilise retry avec backoff exponentiel.
+    Lève une exception en cas d'échec définitif.
+    """
+    def _call_vision_api():
+        gcs_uri = f"gs://{BUCKET_NAME}/{gcs_path}"
+        image = vision.Image(
+            source=vision.ImageSource(gcs_image_uri=gcs_uri)
+        )
+        response = vision_client.text_detection(image=image)
 
-    if response.error.message:
-        print(f"  ⚠️ Erreur Vision : {response.error.message}")
-        return ""
+        if response.error.message:
+            raise Exception(f"Vision API error: {response.error.message}")
+
+        return response
+
+    # Appel avec retry
+    response = retry_with_backoff(
+        _call_vision_api,
+        max_retries=3,
+        operation_name="Cloud Vision OCR"
+    )
 
     texts = response.text_annotations
     if texts:
@@ -278,7 +294,21 @@ def main():
                     })
                     continue
 
-                text = extract_text_from_gcs(vision_client, gcs_path)
+                # Extraire le texte avec retry (peut lever une exception)
+                try:
+                    text = extract_text_from_gcs(vision_client, gcs_path)
+                except Exception as e:
+                    records_failed += 1
+                    failed_pages_records.append({
+                        "chapter_number": chapter_number,
+                        "page_number": page_number,
+                        "pipeline_step": "ocr",
+                        "error_type": "vision_api_error",
+                        "error_message": str(e),
+                        "source_url": gcs_path,
+                        "failed_at": datetime.now(timezone.utc).isoformat(),
+                    })
+                    continue
 
                 rows.append({
                     "chapter_number": chapter_number,
