@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 import anthropic
 from google.cloud import bigquery, secretmanager, storage
 
+from utils import retry_with_backoff
+
 # ============================================================
 # CONFIGURATION
 # ============================================================
@@ -130,10 +132,19 @@ Réponds UNIQUEMENT en JSON sans markdown :
 
 Si aucune mention claire : {{"mentions": []}}"""
 
-    response = anthropic_client.messages.create(
-        model="claude-haiku-4-5-20251001",
-        max_tokens=1000,
-        messages=[{"role": "user", "content": prompt}],
+    def _call_claude_api():
+        response = anthropic_client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=1000,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return response
+
+    # Appel avec retry
+    response = retry_with_backoff(
+        _call_claude_api,
+        max_retries=3,
+        operation_name="Claude API"
     )
 
     raw = response.content[0].text.strip()
