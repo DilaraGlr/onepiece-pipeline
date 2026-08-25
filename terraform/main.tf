@@ -64,11 +64,20 @@ resource "google_bigquery_table" "chapters" {
 resource "google_bigquery_table" "dialogues" {
   dataset_id          = google_bigquery_dataset.onepiece.dataset_id
   table_id            = "dialogues"
-  deletion_protection = false
+  deletion_protection = true
 
   labels = {
     app = "onepiece"
   }
+
+  # Partitioning par jour sur processed_at
+  time_partitioning {
+    type  = "DAY"
+    field = "processed_at"
+  }
+
+  # Clustering sur chapter_number pour optimiser les requêtes
+  clustering = ["chapter_number"]
 
   schema = jsonencode([
     { name = "chapter_number", type = "INTEGER" },
