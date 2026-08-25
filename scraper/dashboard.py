@@ -173,6 +173,48 @@ def apply_style():
 # DONNÉES
 # ============================================================
 
+def query_with_cost_estimation(client, query_text, description="Query"):
+    """
+    Exécute une requête BigQuery avec estimation du volume scanné (dry run).
+
+    IMPORTANT COÛT :
+    - Le dry run (dry_run=True) est 100% GRATUIT selon Google Cloud
+      (https://cloud.google.com/bigquery/docs/samples/bigquery-query-dry-run)
+    - Seule la vraie requête (deuxième appel) est facturée normalement
+    - Aucun risque de double facturation
+
+    Retourne le job de requête BigQuery standard.
+    Stocke l'estimation dans st.session_state pour affichage sidebar.
+    """
+    # Dry run pour estimer le coût sans exécuter ni facturer (GRATUIT)
+    dry_run_config = bigquery.QueryJobConfig(
+        dry_run=True,
+        use_query_cache=False
+    )
+    dry_run_job = client.query(query_text, job_config=dry_run_config)
+
+    # Récupérer les bytes estimés
+    bytes_processed = dry_run_job.total_bytes_processed
+    mb_processed = bytes_processed / (1024 * 1024)
+
+    # Logger pour debug
+    print(f"[DRY RUN] {description}: {mb_processed:.2f} MB estimés")
+
+    # Stocker dans session state pour affichage sidebar
+    # (limite à 20 dernières entrées pour éviter fuite mémoire théorique)
+    if "query_costs" not in st.session_state:
+        st.session_state.query_costs = []
+    st.session_state.query_costs.append({
+        "query": description,
+        "mb": mb_processed
+    })
+    st.session_state.query_costs = st.session_state.query_costs[-20:]
+
+    # Exécuter la vraie requête (avec cache BigQuery normal si applicable)
+    # C'est CE CALL qui est facturé, pas le dry run ci-dessus
+    return client.query(query_text)
+
+
 @st.cache_data
 def get_chapters():
     if IS_CLOUD_RUN:
@@ -191,7 +233,9 @@ def get_chapters():
         FROM `{TABLE_REF}`
         ORDER BY CAST(chapter_number AS INT64)
     """
-    return client.query(query).to_dataframe()
+    return query_with_cost_estimation(
+        client, query, "get_chapters()"
+    ).to_dataframe()
 
 
 @st.cache_data
@@ -217,7 +261,9 @@ def get_speakers():
         ORDER BY chapter_number
     """
     try:
-        return client.query(query).to_dataframe()
+        return query_with_cost_estimation(
+            client, query, "get_speakers()"
+        ).to_dataframe()
     except Exception:
         return pd.DataFrame()
 
@@ -580,6 +626,15 @@ def main():
     })
 
     st.dataframe(filtered, use_container_width=True, hide_index=True)
+
+    # ── Coûts BigQuery ────────────────────────────────────────
+    if "query_costs" in st.session_state and st.session_state.query_costs:
+        with st.sidebar:
+            with st.expander("📊 Coûts BigQuery estimés", expanded=False):
+                total_mb = sum(q["mb"] for q in st.session_state.query_costs)
+                st.caption(f"**Volume total scanné :** {total_mb:.2f} MB")
+                for q in st.session_state.query_costs:
+                    st.caption(f"• {q['query']}: {q['mb']:.2f} MB")
 
 
 if __name__ == "__main__":
