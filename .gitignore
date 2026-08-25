@@ -16,6 +16,7 @@ __pycache__/
 terraform.tfstate
 terraform.tfstate.backup
 terraform.tfvars
+*.tfplan
 
 # Streamlit secrets
 **/.streamlit/secrets.toml
