@@ -322,11 +322,21 @@ def main():
                 time.sleep(0.5)
 
             if rows:
-                errors = bq_client.insert_rows_json(
-                    DIALOGUES_TABLE, rows
-                )
-                if errors:
-                    print(f"  ❌ Erreur BigQuery : {errors}")
+                try:
+                    job_config = bigquery.LoadJobConfig(
+                        write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
+                        source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
+                    )
+                    job = bq_client.load_table_from_json(
+                        rows,
+                        DIALOGUES_TABLE,
+                        job_config=job_config,
+                    )
+                    job.result()
+                    print(f"  ✅ {len(rows)} pages chargées dans BigQuery")
+                    records_processed += len(rows)
+                except Exception as e:
+                    print(f"  ❌ Erreur BigQuery : {e}")
                     records_failed += len(rows)
                     # Décomposer l'erreur batch en lignes individuelles
                     for row in rows:
@@ -334,27 +344,31 @@ def main():
                             "chapter_number": row["chapter_number"],
                             "page_number": row["page_number"],
                             "pipeline_step": "ocr",
-                            "error_type": "bigquery_insert_failed",
-                            "error_message": str(errors),
+                            "error_type": "bigquery_load_failed",
+                            "error_message": str(e),
                             "source_url": row["gcs_path"],
                             "failed_at": datetime.now(timezone.utc).isoformat(),
                         })
-                else:
-                    print(f"  ✅ {len(rows)} pages chargées dans BigQuery")
-                    records_processed += len(rows)
 
             time.sleep(1)
 
         # Insérer toutes les erreurs dans la dead-letter table
         if failed_pages_records:
             print(f"\n📝 Enregistrement de {len(failed_pages_records)} échecs dans failed_pages...")
-            bq_errors = bq_client.insert_rows_json(
-                FAILED_PAGES_TABLE, failed_pages_records
-            )
-            if bq_errors:
-                print(f"  ⚠️ Erreur lors de l'écriture dans failed_pages : {bq_errors}")
-            else:
+            try:
+                job_config = bigquery.LoadJobConfig(
+                    write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
+                    source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
+                )
+                job = bq_client.load_table_from_json(
+                    failed_pages_records,
+                    FAILED_PAGES_TABLE,
+                    job_config=job_config,
+                )
+                job.result()
                 print(f"  ✅ {len(failed_pages_records)} échecs enregistrés")
+            except Exception as e:
+                print(f"  ⚠️ Erreur lors de l'écriture dans failed_pages : {e}")
 
         print(f"\n🏴‍☠️  OCR Pipeline terminé ! ({records_processed} pages traitées, {records_failed} échecs)")
         write_status_to_gcs("success", records_processed, records_failed)

@@ -297,13 +297,20 @@ def main():
         # Insérer toutes les erreurs dans la dead-letter table
         if failed_pages_records:
             print(f"\n📝 Enregistrement de {len(failed_pages_records)} échecs dans failed_pages...")
-            bq_errors = bq_client.insert_rows_json(
-                FAILED_PAGES_TABLE, failed_pages_records
-            )
-            if bq_errors:
-                print(f"  ⚠️ Erreur lors de l'écriture dans failed_pages : {bq_errors}")
-            else:
+            try:
+                job_config = bigquery.LoadJobConfig(
+                    write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
+                    source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
+                )
+                job = bq_client.load_table_from_json(
+                    failed_pages_records,
+                    FAILED_PAGES_TABLE,
+                    job_config=job_config,
+                )
+                job.result()
                 print(f"  ✅ {len(failed_pages_records)} échecs enregistrés")
+            except Exception as e:
+                print(f"  ⚠️ Erreur lors de l'écriture dans failed_pages : {e}")
 
         print(f"\n🏴‍☠️  NLP Pipeline terminé ! ({records_processed} pages traitées, {records_failed} échecs)")
         write_status_to_gcs("success", records_processed, records_failed)
