@@ -80,9 +80,64 @@ resource "google_project_iam_member" "dataform_bq_job_user" {
   member  = "serviceAccount:${google_service_account.dataform.email}"
 }
 
-# Permission Dataform : exécuter les workflows
-resource "google_project_iam_member" "dataform_workflow_invoker" {
-  project = var.project_id
-  role    = "roles/dataform.workflowInvoker"
-  member  = "serviceAccount:${google_service_account.dataform.email}"
+# NOTE : Pas de permission Dataform au niveau projet pour l'instant.
+# Le rôle roles/dataform.workflowInvoker n'existe pas (erreur lors du terraform apply).
+# Les rôles Dataform disponibles (dataform.admin, dataform.codeScheduler, etc.) concernent
+# le service Dataform managé dans Google Cloud (scheduled workflows via UI/API), pas
+# l'exécution locale via CLI.
+#
+# Pour l'exécution actuelle (CLI local avec credentials utilisateur), seules les permissions
+# BigQuery (bigquery.jobUser + bigquery.dataEditor) sont nécessaires.
+#
+# SI AUTOMATISATION FUTURE VIA SERVICE DATAFORM MANAGÉ : Ajouter roles/dataform.codeScheduler
+# ou roles/dataform.admin pour permettre au service account de scheduler/exécuter des workflows.
+#
+# resource "google_project_iam_member" "dataform_code_scheduler" {
+#   project = var.project_id
+#   role    = "roles/dataform.codeScheduler"
+#   member  = "serviceAccount:${google_service_account.dataform.email}"
+# }
+
+# ============================================================
+# DATASETS DE DÉVELOPPEMENT (_dev)
+# ============================================================
+
+# Dataset de développement pour tester les modèles Dataform
+resource "google_bigquery_dataset" "onepiece_dev" {
+  dataset_id = "onepiece_dev"
+  location   = "EU"
+
+  labels = {
+    app = "onepiece"
+    env = "dev"
+  }
+
+  description = "Dataset de développement pour tester les transformations Dataform (suffix _dev)"
+}
+
+# Dataset pour les assertions de qualité en développement
+resource "google_bigquery_dataset" "dataform_assertions_dev" {
+  dataset_id = "dataform_assertions_dev"
+  location   = "EU"
+
+  labels = {
+    app = "onepiece"
+    env = "dev"
+  }
+
+  description = "Dataset de développement pour les assertions de qualité Dataform (suffix _dev)"
+}
+
+# Permission BigQuery : lecture/écriture sur le dataset onepiece_dev
+resource "google_bigquery_dataset_iam_member" "dataform_onepiece_dev_editor" {
+  dataset_id = google_bigquery_dataset.onepiece_dev.dataset_id
+  role       = "roles/bigquery.dataEditor"
+  member     = "serviceAccount:${google_service_account.dataform.email}"
+}
+
+# Permission BigQuery : lecture/écriture sur le dataset dataform_assertions_dev
+resource "google_bigquery_dataset_iam_member" "dataform_assertions_dev_editor" {
+  dataset_id = google_bigquery_dataset.dataform_assertions_dev.dataset_id
+  role       = "roles/bigquery.dataEditor"
+  member     = "serviceAccount:${google_service_account.dataform.email}"
 }
