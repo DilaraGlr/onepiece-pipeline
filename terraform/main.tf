@@ -4,6 +4,10 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 4.0"
     }
+    google-beta = {
+      source  = "hashicorp/google-beta"
+      version = "~> 4.0"
+    }
     archive = {
       source  = "hashicorp/archive"
       version = "~> 2.0"
@@ -12,6 +16,13 @@ terraform {
 }
 
 provider "google" {
+  project               = var.project_id
+  region                = var.region
+  user_project_override = true
+  billing_project       = var.project_id
+}
+
+provider "google-beta" {
   project               = var.project_id
   region                = var.region
   user_project_override = true

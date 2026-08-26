@@ -1,0 +1,7 @@
+{
+  "warehouse": "bigquery",
+  "defaultProject": "t-lexicon-231513",
+  "defaultDataset": "onepiece",
+  "defaultLocation": "EU",
+  "assertionSchema": "dataform_assertions"
+}
