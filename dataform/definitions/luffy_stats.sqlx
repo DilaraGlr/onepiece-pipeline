@@ -1,0 +1,26 @@
+config {
+  type: "table",
+  schema: "onepiece",
+  description: "Statistiques agrégées sur les mentions 'Roi des pirates' par chapitre",
+  columns: {
+    chapter_number: "Numéro du chapitre",
+    total_mentions: "Nombre total de mentions dans ce chapitre",
+    luffy_mentions: "Nombre de fois où Luffy dit lui-même qu'il sera roi des pirates",
+    about_luffy_mentions: "Nombre de fois où quelqu'un d'autre parle de Luffy comme roi",
+    other_mentions: "Nombre de mentions dans un autre contexte"
+  },
+  assertions: {
+    uniqueKey: ["chapter_number"],
+    nonNull: ["chapter_number", "total_mentions"]
+  }
+}
+
+SELECT
+  chapter_number,
+  COUNT(*) AS total_mentions,
+  COUNTIF(luffy_says_it = TRUE) AS luffy_mentions,
+  COUNTIF(about_luffy = TRUE AND luffy_says_it = FALSE) AS about_luffy_mentions,
+  COUNTIF(luffy_says_it = FALSE AND about_luffy = FALSE) AS other_mentions
+FROM ${ref("speakers")}
+GROUP BY chapter_number
+ORDER BY chapter_number
