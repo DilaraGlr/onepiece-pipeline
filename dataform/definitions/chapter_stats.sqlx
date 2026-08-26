@@ -1,0 +1,105 @@
+config {
+  type: "table",
+  schema: "onepiece",
+  description: "Statistiques agrégées sur les chapitres : moyennes par tranche, arcs narratifs, top 10",
+  columns: {
+    chapter_number: "Numéro du chapitre",
+    image_count: "Nombre de pages du chapitre",
+    tranche: "Tranche de 100 chapitres (0, 100, 200, etc.)",
+    tranche_moy: "Moyenne de pages pour cette tranche de 100 chapitres",
+    arc_name: "Nom de l'arc narratif",
+    arc_saga: "Saga (East Blue, Grand Line, New World)",
+    rolling_mean_50: "Moyenne mobile sur 50 chapitres (centrée)",
+    is_top10: "Booléen : fait partie du top 10 des chapitres les plus longs"
+  },
+  assertions: {
+    uniqueKey: ["chapter_number"],
+    nonNull: ["chapter_number", "image_count", "tranche"]
+  }
+}
+
+WITH base_chapters AS (
+  SELECT
+    chapter_number,
+    image_count,
+    scraped_at
+  FROM ${ref("chapters")}
+),
+
+-- Calcul de la tranche de 100 chapitres
+chapters_with_tranche AS (
+  SELECT
+    *,
+    (chapter_number DIV 100) * 100 AS tranche
+  FROM base_chapters
+),
+
+-- Moyenne par tranche
+tranche_stats AS (
+  SELECT
+    tranche,
+    ROUND(AVG(image_count), 1) AS tranche_moy
+  FROM chapters_with_tranche
+  GROUP BY tranche
+),
+
+-- Attribution des arcs narratifs (basé sur les ranges définis dans dashboard.py)
+chapters_with_arc AS (
+  SELECT
+    c.*,
+    CASE
+      WHEN chapter_number BETWEEN 1 AND 100 THEN 'East Blue'
+      WHEN chapter_number BETWEEN 101 AND 216 THEN 'Arabasta'
+      WHEN chapter_number BETWEEN 217 AND 302 THEN 'Skypiea'
+      WHEN chapter_number BETWEEN 303 AND 441 THEN 'Water Seven'
+      WHEN chapter_number BETWEEN 442 AND 489 THEN 'Thriller Bark'
+      WHEN chapter_number BETWEEN 490 AND 597 THEN 'Summit War'
+      WHEN chapter_number BETWEEN 598 AND 653 THEN 'Fish-Man Island'
+      WHEN chapter_number BETWEEN 654 AND 801 THEN 'Dressrosa'
+      WHEN chapter_number BETWEEN 802 AND 902 THEN 'Whole Cake Island'
+      WHEN chapter_number BETWEEN 903 AND 1057 THEN 'Wano'
+      WHEN chapter_number BETWEEN 1058 AND 1172 THEN 'Egghead'
+      ELSE NULL
+    END AS arc_name,
+    CASE
+      WHEN chapter_number BETWEEN 1 AND 100 THEN 'East Blue'
+      WHEN chapter_number BETWEEN 101 AND 597 THEN 'Grand Line'
+      WHEN chapter_number >= 598 THEN 'New World'
+      ELSE NULL
+    END AS arc_saga
+  FROM chapters_with_tranche c
+),
+
+-- Rolling mean 50 chapitres (fenêtre centrée : 25 avant, 25 après)
+chapters_with_rolling AS (
+  SELECT
+    c.*,
+    ROUND(AVG(c.image_count) OVER (
+      ORDER BY c.chapter_number
+      ROWS BETWEEN 25 PRECEDING AND 25 FOLLOWING
+    ), 1) AS rolling_mean_50
+  FROM chapters_with_arc c
+),
+
+-- Top 10 chapitres les plus longs
+top10_chapters AS (
+  SELECT chapter_number
+  FROM base_chapters
+  ORDER BY image_count DESC
+  LIMIT 10
+)
+
+-- Résultat final
+SELECT
+  c.chapter_number,
+  c.image_count,
+  c.tranche,
+  t.tranche_moy,
+  c.arc_name,
+  c.arc_saga,
+  c.rolling_mean_50,
+  CASE WHEN top.chapter_number IS NOT NULL THEN TRUE ELSE FALSE END AS is_top10
+FROM chapters_with_rolling c
+LEFT JOIN tranche_stats t ON c.tranche = t.tranche
+LEFT JOIN top10_chapters top ON c.chapter_number = top.chapter_number
+ORDER BY c.chapter_number
