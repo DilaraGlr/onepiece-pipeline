@@ -1,0 +1,10 @@
+# Version du framework Dataform (requis pour le CLI)
+dataformCoreVersion: "3.0.0"
+
+# Configuration BigQuery par défaut
+defaultProject: t-lexicon-231513
+defaultDataset: onepiece
+defaultLocation: EU
+
+# Dataset pour les assertions de qualité
+defaultAssertionDataset: dataform_assertions

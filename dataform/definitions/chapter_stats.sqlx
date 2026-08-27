@@ -23,14 +23,22 @@ WITH base_chapters AS (
     chapter_number,
     image_count,
     scraped_at
-  FROM ${ref("chapters")}
+  FROM (
+    SELECT
+      chapter_number,
+      image_count,
+      scraped_at,
+      ROW_NUMBER() OVER (PARTITION BY chapter_number ORDER BY scraped_at DESC) AS rn
+    FROM ${ref("chapters")}
+  )
+  WHERE rn = 1
 ),
 
 -- Calcul de la tranche de 100 chapitres
 chapters_with_tranche AS (
   SELECT
     *,
-    (chapter_number DIV 100) * 100 AS tranche
+    DIV(chapter_number, 100) * 100 AS tranche
   FROM base_chapters
 ),
 
