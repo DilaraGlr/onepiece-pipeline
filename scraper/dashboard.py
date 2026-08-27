@@ -16,6 +16,8 @@ DATASET_ID = "onepiece"
 TABLE_ID = "chapters"
 TABLE_REF = f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}"
 SPEAKERS_REF = f"{PROJECT_ID}.{DATASET_ID}.speakers"
+CHAPTER_STATS_REF = f"{PROJECT_ID}.{DATASET_ID}.chapter_stats"
+LUFFY_STATS_REF = f"{PROJECT_ID}.{DATASET_ID}.luffy_stats"
 
 # Détecter l'environnement
 IS_CLOUD_RUN = os.getenv("K_SERVICE") is not None
@@ -217,6 +219,13 @@ def query_with_cost_estimation(client, query_text, description="Query"):
 
 @st.cache_data
 def get_chapters():
+    """Lit la table brute chapters (pour scraped_at dans l'explorateur).
+
+    ATTENTION BUG CONNU : Cette table contient des doublons (ex: chapitres 1, 2, 3
+    apparaissent 3 fois suite à plusieurs runs de scraping non-idempotents).
+    L'explorateur affichera donc des lignes en double. Ce bug sera corrigé côté
+    scraper, pas ici. En attendant, chapter_stats déduplique ces données.
+    """
     if IS_CLOUD_RUN:
         credentials, _ = default()
         client = bigquery.Client(project=PROJECT_ID, credentials=credentials)
@@ -235,6 +244,36 @@ def get_chapters():
     """
     return query_with_cost_estimation(
         client, query, "get_chapters()"
+    ).to_dataframe()
+
+
+@st.cache_data
+def get_chapter_stats():
+    """Lit la table agrégée chapter_stats (pré-calculée par Dataform)."""
+    if IS_CLOUD_RUN:
+        credentials, _ = default()
+        client = bigquery.Client(project=PROJECT_ID, credentials=credentials)
+    else:
+        credentials = service_account.Credentials.from_service_account_info(
+            json.loads(st.secrets["gcp_service_account"]) if isinstance(st.secrets["gcp_service_account"], str) else dict(st.secrets["gcp_service_account"])
+        )
+        client = bigquery.Client(project=PROJECT_ID, credentials=credentials)
+
+    query = f"""
+        SELECT
+            chapter_number,
+            image_count,
+            tranche,
+            tranche_moy,
+            arc_name,
+            arc_saga,
+            rolling_mean_50,
+            is_top10
+        FROM `{CHAPTER_STATS_REF}`
+        ORDER BY chapter_number
+    """
+    return query_with_cost_estimation(
+        client, query, "get_chapter_stats()"
     ).to_dataframe()
 
 
@@ -263,6 +302,36 @@ def get_speakers():
     try:
         return query_with_cost_estimation(
             client, query, "get_speakers()"
+        ).to_dataframe()
+    except Exception:
+        return pd.DataFrame()
+
+
+@st.cache_data
+def get_luffy_stats():
+    """Lit la table agrégée luffy_stats (pré-calculée par Dataform)."""
+    if IS_CLOUD_RUN:
+        credentials, _ = default()
+        client = bigquery.Client(project=PROJECT_ID, credentials=credentials)
+    else:
+        credentials = service_account.Credentials.from_service_account_info(
+            json.loads(st.secrets["gcp_service_account"]) if isinstance(st.secrets["gcp_service_account"], str) else dict(st.secrets["gcp_service_account"])
+        )
+        client = bigquery.Client(project=PROJECT_ID, credentials=credentials)
+
+    query = f"""
+        SELECT
+            chapter_number,
+            total_mentions,
+            luffy_mentions,
+            about_luffy_mentions,
+            other_mentions
+        FROM `{LUFFY_STATS_REF}`
+        ORDER BY chapter_number
+    """
+    try:
+        return query_with_cost_estimation(
+            client, query, "get_luffy_stats()"
         ).to_dataframe()
     except Exception:
         return pd.DataFrame()
@@ -312,10 +381,9 @@ def chart_evolution(df):
         fillcolor="rgba(27,79,122,0.2)",
     ))
 
-    rolling = df["image_count"].rolling(50, center=True).mean()
     fig.add_trace(go.Scatter(
         x=df["chapter_number"],
-        y=rolling,
+        y=df["rolling_mean_50"],
         mode="lines",
         name="Tendance (50 chap.)",
         line=dict(color=OR, width=2.5, shape="spline"),
@@ -332,20 +400,20 @@ def chart_evolution(df):
 
 
 def chart_arcs(df):
-    arcs_data = []
-    for arc in ARCS:
-        nb = df[
-            (df["chapter_number"] >= arc["debut"]) &
-            (df["chapter_number"] <= arc["fin"])
-        ].shape[0]
-        arcs_data.append({
-            "nom": arc["nom"],
-            "chapitres": nb,
-            "saga": arc["saga"],
-            "label": f"{arc['debut']}–{arc['fin']}",
-        })
+    """Utilise arc_name et arc_saga pré-calculés dans chapter_stats."""
+    # Compter par arc_name (déjà calculé dans chapter_stats)
+    arc_counts = df.groupby('arc_name').size().reset_index(name='chapitres')
 
-    df_arcs = pd.DataFrame(arcs_data)
+    # Enrichir avec saga et label depuis ARCS (pour le hover et les couleurs)
+    arc_lookup = {arc["nom"]: {"saga": arc["saga"], "label": f"{arc['debut']}–{arc['fin']}"} for arc in ARCS}
+    arc_counts["saga"] = arc_counts["arc_name"].map(lambda x: arc_lookup.get(x, {}).get("saga"))
+    arc_counts["label"] = arc_counts["arc_name"].map(lambda x: arc_lookup.get(x, {}).get("label"))
+
+    # Préserver l'ordre chronologique de ARCS (pas alphabétique)
+    arc_order_df = pd.DataFrame({"arc_name": [arc["nom"] for arc in ARCS]})
+    arc_counts = arc_order_df.merge(arc_counts, on="arc_name", how="inner")
+
+    df_arcs = arc_counts.rename(columns={"arc_name": "nom"})
 
     fig = go.Figure()
 
@@ -387,14 +455,11 @@ def chart_arcs(df):
 
 
 def chart_tranches(df):
-    df = df.copy()
-    df["tranche"] = (df["chapter_number"] // 100) * 100
-    moy = (
-        df.groupby("tranche")["image_count"]
-        .mean().round(1).reset_index()
-        .rename(columns={"image_count": "moy"})
-    )
+    """Utilise les données pré-agrégées de chapter_stats."""
+    # Prendre les valeurs uniques tranche + tranche_moy
+    moy = df[["tranche", "tranche_moy"]].drop_duplicates().sort_values("tranche")
     moy["label"] = moy["tranche"].apply(lambda x: f"{x}–{x+99}")
+    moy = moy.rename(columns={"tranche_moy": "moy"})
 
     colors = [OR if v == moy["moy"].max() else CIEL for v in moy["moy"]]
 
@@ -425,7 +490,8 @@ def chart_tranches(df):
 
 
 def chart_top10(df):
-    top = df.nlargest(10, "image_count").copy()
+    """Utilise le flag is_top10 de chapter_stats."""
+    top = df[df["is_top10"]].copy()
     top = top.sort_values("image_count")
     top["label"] = top["chapter_number"].apply(lambda x: f"Chapitre {x}")
 
@@ -454,11 +520,10 @@ def chart_top10(df):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def chart_roi_par_chapitre(df):
-    par_chapitre = (
-        df.groupby("chapter_number")
-        .size()
-        .reset_index(name="occurrences")
+def chart_roi_par_chapitre(df_stats):
+    """Utilise luffy_stats pré-agrégé."""
+    par_chapitre = df_stats[["chapter_number", "total_mentions"]].rename(
+        columns={"total_mentions": "occurrences"}
     )
 
     fig = go.Figure()
@@ -478,10 +543,11 @@ def chart_roi_par_chapitre(df):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def chart_luffy_vs_autres(df):
-    luffy = df[df["luffy_says_it"]].shape[0]
-    autres = df[df["about_luffy"] & ~df["luffy_says_it"]].shape[0]
-    reste = df.shape[0] - luffy - autres
+def chart_luffy_vs_autres(df_stats):
+    """Utilise luffy_stats pré-agrégé."""
+    luffy = df_stats["luffy_mentions"].sum()
+    autres = df_stats["about_luffy_mentions"].sum()
+    reste = df_stats["other_mentions"].sum()
 
     fig = go.Figure()
     fig.add_trace(go.Pie(
@@ -513,7 +579,9 @@ def main():
     apply_style()
 
     with st.spinner("Navigation vers les données..."):
-        df = get_chapters()
+        df = get_chapter_stats()
+        df_chapters_raw = get_chapters()  # pour scraped_at dans l'explorateur
+        df_luffy_stats = get_luffy_stats()
         df_speakers = get_speakers()
 
     if df.empty:
@@ -567,15 +635,15 @@ def main():
     # ── Roi des Pirates ────────────────────────────────────
     st.subheader("🏴‍☠️ Roi des Pirates")
 
-    if df_speakers.empty:
+    if df_luffy_stats.empty:
         st.info(
             "L'analyse NLP est en cours de traitement. "
             "Les statistiques apparaîtront ici automatiquement."
         )
     else:
-        luffy_count = df_speakers[df_speakers["luffy_says_it"]].shape[0]
-        about_count = df_speakers[df_speakers["about_luffy"]].shape[0]
-        total = df_speakers.shape[0]
+        luffy_count = df_luffy_stats["luffy_mentions"].sum()
+        about_count = df_luffy_stats["about_luffy_mentions"].sum()
+        total = df_luffy_stats["total_mentions"].sum()
 
         r1, r2, r3 = st.columns(3)
         with r1:
@@ -587,9 +655,9 @@ def main():
 
         col1, col2 = st.columns(2)
         with col1:
-            chart_roi_par_chapitre(df_speakers)
+            chart_roi_par_chapitre(df_luffy_stats)
         with col2:
-            chart_luffy_vs_autres(df_speakers)
+            chart_luffy_vs_autres(df_luffy_stats)
 
         st.markdown("---")
         st.subheader("Exemples de phrases de Luffy")
@@ -616,9 +684,11 @@ def main():
     with c_max:
         mx = st.number_input("À", 1, int(df["chapter_number"].max()), 100)
 
-    filtered = df[
-        (df["chapter_number"] >= mn) &
-        (df["chapter_number"] <= mx)
+    # ATTENTION : df_chapters_raw contient des doublons (bug scraper non-idempotent)
+    # donc l'explorateur affichera des lignes en double pour certains chapitres
+    filtered = df_chapters_raw[
+        (df_chapters_raw["chapter_number"] >= mn) &
+        (df_chapters_raw["chapter_number"] <= mx)
     ][["chapter_number", "image_count", "scraped_at"]].rename(columns={
         "chapter_number": "Chapitre",
         "image_count": "Pages",
