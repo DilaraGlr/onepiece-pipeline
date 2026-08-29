@@ -243,7 +243,7 @@ resource "google_cloud_run_v2_job" "ocr" {
       service_account = google_service_account.job_ocr.email
 
       containers {
-        image = "europe-west1-docker.pkg.dev/${var.project_id}/onepiece-repo/scraper:${var.image_tag}"
+        image = "europe-west1-docker.pkg.dev/${var.project_id}/onepiece-repo/ocr:${var.image_tag}"
 
         env {
           name  = "PIPELINE_MODE"
