@@ -46,6 +46,14 @@ resource "google_project_iam_member" "workflow_logging_writer" {
   member  = "serviceAccount:${google_service_account.workflow.email}"
 }
 
+# Permissions GCS - UNIQUEMENT sur le bucket onepiece-manga-images pour lire les fichiers _status/*.json
+# MOINDRE PRIVILÈGE : Lecture seule, scopée au bucket nécessaire pour vérifier le statut des jobs
+resource "google_storage_bucket_iam_member" "workflow_manga_images" {
+  bucket = google_storage_bucket.manga_images.name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${google_service_account.workflow.email}"
+}
+
 # ============================================================
 
 # 3. Service Account pour job Scraper
@@ -55,11 +63,12 @@ resource "google_service_account" "job_scraper" {
   description  = "Scraper - acces BigQuery et GCS"
 }
 
-# Permissions BigQuery
-resource "google_project_iam_member" "job_scraper_bq_editor" {
-  project = var.project_id
-  role    = "roles/bigquery.dataEditor"
-  member  = "serviceAccount:${google_service_account.job_scraper.email}"
+# Permissions BigQuery - SCOPÉ AU DATASET onepiece (MOINDRE PRIVILÈGE)
+# Le SA peut UNIQUEMENT écrire dans le dataset onepiece, pas dans les autres datasets du projet
+resource "google_bigquery_dataset_iam_member" "job_scraper_onepiece_editor" {
+  dataset_id = google_bigquery_dataset.onepiece.dataset_id
+  role       = "roles/bigquery.dataEditor"
+  member     = "serviceAccount:${google_service_account.job_scraper.email}"
 }
 
 resource "google_project_iam_member" "job_scraper_bq_job_user" {
@@ -85,11 +94,12 @@ resource "google_service_account" "job_ocr" {
   description  = "OCR - acces BigQuery et GCS"
 }
 
-# Permissions BigQuery
-resource "google_project_iam_member" "job_ocr_bq_editor" {
-  project = var.project_id
-  role    = "roles/bigquery.dataEditor"
-  member  = "serviceAccount:${google_service_account.job_ocr.email}"
+# Permissions BigQuery - SCOPÉ AU DATASET onepiece (MOINDRE PRIVILÈGE)
+# Le SA peut UNIQUEMENT écrire dans le dataset onepiece, pas dans les autres datasets du projet
+resource "google_bigquery_dataset_iam_member" "job_ocr_onepiece_editor" {
+  dataset_id = google_bigquery_dataset.onepiece.dataset_id
+  role       = "roles/bigquery.dataEditor"
+  member     = "serviceAccount:${google_service_account.job_ocr.email}"
 }
 
 resource "google_project_iam_member" "job_ocr_bq_job_user" {
@@ -115,11 +125,12 @@ resource "google_service_account" "job_nlp" {
   description  = "Pipeline NLP - acces BigQuery et secret Anthropic"
 }
 
-# Permissions BigQuery
-resource "google_project_iam_member" "job_nlp_bq_editor" {
-  project = var.project_id
-  role    = "roles/bigquery.dataEditor"
-  member  = "serviceAccount:${google_service_account.job_nlp.email}"
+# Permissions BigQuery - SCOPÉ AU DATASET onepiece (MOINDRE PRIVILÈGE)
+# Le SA peut UNIQUEMENT écrire dans le dataset onepiece, pas dans les autres datasets du projet
+resource "google_bigquery_dataset_iam_member" "job_nlp_onepiece_editor" {
+  dataset_id = google_bigquery_dataset.onepiece.dataset_id
+  role       = "roles/bigquery.dataEditor"
+  member     = "serviceAccount:${google_service_account.job_nlp.email}"
 }
 
 resource "google_project_iam_member" "job_nlp_bq_job_user" {

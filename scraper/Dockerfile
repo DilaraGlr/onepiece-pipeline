@@ -9,6 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY scraper.py .
 COPY load_to_bigquery.py .
 COPY ocr_pipeline.py .
+COPY utils.py .
 
 # PIPELINE_MODE=scraper → lance le scraper
 # PIPELINE_MODE=ocr     → lance l'OCR
