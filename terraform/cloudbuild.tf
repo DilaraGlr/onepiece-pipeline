@@ -32,12 +32,48 @@
 # Pour importer ensuite dans Terraform (optionnel) :
 # terraform import google_cloudbuild_trigger.onepiece_deploy projects/onepiece-pipeline/locations/global/triggers/TRIGGER_ID
 
-# Ressource commentée pour l'instant - créer manuellement via la console
-# resource "google_cloudbuild_trigger" "onepiece_deploy" {
-#   name        = "onepiece-deploy-main"
-#   description = "Déploiement automatique du pipeline One Piece à chaque push sur main"
-#   filename    = "cloudbuild.yaml"
-# }
+# ============================================================
+# CLOUD BUILD TRIGGER - DÉPLOIEMENT AUTOMATIQUE
+# ============================================================
+# Trigger 1ère génération (connexion GitHub App existante)
+# La connexion GitHub App ne peut pas être créée par Terraform
+# (limitation GCP), mais le trigger lui-même est géré en IaC.
+#
+# Import du trigger existant :
+# terraform import google_cloudbuild_trigger.onepiece_deploy \
+#   projects/t-lexicon-231513/locations/europe-west1/triggers/e68773e5-aa26-42b9-bb35-8ca5a3c15638
+
+resource "google_cloudbuild_trigger" "onepiece_deploy" {
+  # Identité du trigger
+  name        = "onepiece-deploy-main"
+  description = "Déploiement automatique du pipeline One Piece à chaque push sur main"
+  location    = "europe-west1"  # ⚠️ CRITIQUE : trigger régional, pas global
+
+  # Fichier de configuration Cloud Build
+  filename = "cloudbuild.yaml"
+
+  # Configuration GitHub 1ère génération
+  # Pointe vers une connexion GitHub App existante (créée manuellement)
+  github {
+    owner = "DilaraGlr"
+    name  = "onepiece-pipeline"
+
+    # Déclenche sur push vers la branche main
+    push {
+      branch = "^main$"
+    }
+  }
+
+  # Service Account dédié pour les builds
+  # Référence le SA créé dans ce même fichier (ligne 55)
+  service_account = google_service_account.cloudbuild.id
+
+  # Substitutions personnalisées pour cloudbuild.yaml
+  # Variable utilisée dans terraform apply (étape 8 du cloudbuild.yaml)
+  substitutions = {
+    _BILLING_ACCOUNT_ID = var.billing_account_id
+  }
+}
 
 # ============================================================
 # SERVICE ACCOUNT CLOUD BUILD
