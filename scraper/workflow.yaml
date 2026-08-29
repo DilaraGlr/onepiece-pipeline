@@ -44,7 +44,7 @@ main:
     - validate_scraper:
         switch:
           - condition: ${scraper_status_file.body.status == "error"}
-            raise: "Scraper failed"
+            raise: '${"Scraper failed: " + default(scraper_status_file.body.error_message, "unknown error")}'
           - condition: ${scraper_status_file.body.status == "success_empty"}
             next: done_empty_pipeline
           - condition: ${scraper_status_file.body.status == "success" and scraper_status_file.body.records_processed > 0}
@@ -92,7 +92,7 @@ main:
     - validate_ocr:
         switch:
           - condition: ${ocr_status_file.body.status == "error"}
-            raise: "OCR failed"
+            raise: '${"OCR failed: " + default(ocr_status_file.body.error_message, "unknown error")}'
           - condition: ${ocr_status_file.body.status == "success_empty"}
             next: done_empty_pipeline
           - condition: ${ocr_status_file.body.status == "success" and ocr_status_file.body.records_processed > 0}
@@ -140,7 +140,7 @@ main:
     - validate_nlp:
         switch:
           - condition: ${nlp_status_file.body.status == "error"}
-            raise: "NLP failed"
+            raise: '${"NLP failed: " + default(nlp_status_file.body.error_message, "unknown error")}'
           - condition: ${nlp_status_file.body.status == "success_empty"}
             next: done_empty_pipeline
           - condition: ${nlp_status_file.body.status == "success" and nlp_status_file.body.records_processed > 0}
