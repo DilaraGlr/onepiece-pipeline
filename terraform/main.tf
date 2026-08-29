@@ -119,6 +119,26 @@ resource "google_bigquery_table" "speakers" {
   ])
 }
 
+resource "google_bigquery_table" "failed_pages" {
+  dataset_id          = google_bigquery_dataset.onepiece.dataset_id
+  table_id            = "failed_pages"
+  deletion_protection = true  # Dead-letter table : données critiques pour debugging
+
+  labels = {
+    app = "onepiece"
+  }
+
+  schema = jsonencode([
+    { name = "chapter_number", type = "INTEGER" },
+    { name = "page_number", type = "INTEGER" },
+    { name = "pipeline_step", type = "STRING" },
+    { name = "error_type", type = "STRING" },
+    { name = "error_message", type = "STRING" },
+    { name = "source_url", type = "STRING" },
+    { name = "failed_at", type = "TIMESTAMP" }
+  ])
+}
+
 # ============================================================
 # GOOGLE CLOUD STORAGE
 # ============================================================
