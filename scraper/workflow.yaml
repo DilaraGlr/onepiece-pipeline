@@ -44,12 +44,14 @@ main:
     - validate_scraper:
         switch:
           - condition: ${scraper_status_file.body.status == "error"}
-            raise: ${"Scraper a échoué: " + default(scraper_status_file.body.error_message, "erreur inconnue")}
+            raise: "Scraper failed"
           - condition: ${scraper_status_file.body.status == "success_empty"}
             next: done_empty_pipeline
           - condition: ${scraper_status_file.body.status == "success" and scraper_status_file.body.records_processed > 0}
             next: launch_ocr
-        raise: "Scraper terminé mais status invalide ou 0 enregistrements traités"
+
+    - scraper_invalid_status:
+        raise: "Scraper completed with invalid status or 0 records"
 
     - launch_ocr:
         call: http.post
@@ -90,12 +92,14 @@ main:
     - validate_ocr:
         switch:
           - condition: ${ocr_status_file.body.status == "error"}
-            raise: ${"OCR a échoué: " + default(ocr_status_file.body.error_message, "erreur inconnue")}
+            raise: "OCR failed"
           - condition: ${ocr_status_file.body.status == "success_empty"}
             next: done_empty_pipeline
           - condition: ${ocr_status_file.body.status == "success" and ocr_status_file.body.records_processed > 0}
             next: launch_nlp
-        raise: "OCR terminé mais status invalide ou 0 enregistrements traités"
+
+    - ocr_invalid_status:
+        raise: "OCR completed with invalid status or 0 records"
 
     - launch_nlp:
         call: http.post
@@ -136,12 +140,14 @@ main:
     - validate_nlp:
         switch:
           - condition: ${nlp_status_file.body.status == "error"}
-            raise: ${"NLP a échoué: " + default(nlp_status_file.body.error_message, "erreur inconnue")}
+            raise: "NLP failed"
           - condition: ${nlp_status_file.body.status == "success_empty"}
             next: done_empty_pipeline
           - condition: ${nlp_status_file.body.status == "success" and nlp_status_file.body.records_processed > 0}
             next: done
-        raise: "NLP terminé mais status invalide ou 0 enregistrements traités"
+
+    - nlp_invalid_status:
+        raise: "NLP completed with invalid status or 0 records"
 
     - done:
         return: "Pipeline One Piece terminé avec succès ! Données traitées à toutes les étapes."

@@ -22,7 +22,7 @@ resource "google_bigquery_dataset" "billing_export" {
   dataset_id                  = "billing_export"
   friendly_name               = "Billing Export Data"
   description                 = "Dataset pour les exports de facturation Google Cloud"
-  location                    = "US" # Les exports de facturation doivent être en US ou EU
+  location                    = "EU" # Migré vers EU pour cohérence avec ressources principales
   default_table_expiration_ms = null # Pas d'expiration automatique des tables
 
   # Accès au compte de service Cloud Billing pour écrire les données

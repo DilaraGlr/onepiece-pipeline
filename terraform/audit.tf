@@ -89,7 +89,7 @@ resource "google_logging_project_sink" "audit_logs_to_bigquery" {
 # Dataset BigQuery pour stocker les audit logs
 resource "google_bigquery_dataset" "audit_logs" {
   dataset_id  = "audit_logs"
-  location    = "US" # Doit être en US pour les audit logs
+  location    = "EU" # Migré vers EU pour cohérence avec ressources principales (onepiece dataset)
   description = "Stockage des audit logs pour analyse et compliance"
 
   # Retention de 90 jours (obligatoire pour RGPD en général)
