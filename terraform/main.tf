@@ -53,6 +53,12 @@ resource "google_bigquery_dataset" "pipeline_logs" {
   description = "Dataset pour stocker les logs des Cloud Run jobs du pipeline"
 }
 
+# ============================================================
+# TABLE CHAPTERS - MÉTADONNÉES DES CHAPITRES SCRAPÉS
+# ============================================================
+# Pas de partitioning/clustering : volumétrie trop faible (~1200 lignes
+# pour 1172 chapitres publiés à ce jour) pour justifier la complexité.
+# À revoir si la table dépasse plusieurs millions de lignes ou plusieurs Go.
 resource "google_bigquery_table" "chapters" {
   dataset_id          = google_bigquery_dataset.onepiece.dataset_id
   table_id            = "chapters"
@@ -100,6 +106,12 @@ resource "google_bigquery_table" "dialogues" {
   ])
 }
 
+# ============================================================
+# TABLE SPEAKERS - MENTIONS "ROI DES PIRATES" PAR LOCUTEUR
+# ============================================================
+# Pas de partitioning/clustering : volumétrie très faible (~300 lignes
+# pour quelques centaines de mentions à ce jour) pour justifier la complexité.
+# À revoir si la table dépasse plusieurs millions de lignes ou plusieurs Go.
 resource "google_bigquery_table" "speakers" {
   dataset_id          = google_bigquery_dataset.onepiece.dataset_id
   table_id            = "speakers"
