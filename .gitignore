@@ -24,3 +24,7 @@ streamlit-key.json
 
 functions/kill-billing.zip
 streamlit-key*.json
+
+# Markdown files (documentation locale uniquement)
+*.md
+!README.md
