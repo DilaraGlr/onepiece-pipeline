@@ -22,7 +22,5 @@ terraform.tfvars
 **/.streamlit/secrets.toml
 streamlit-key.json
 
-# Markdown files (documentation locale uniquement)
-*.md
 functions/kill-billing.zip
 streamlit-key*.json
